@@ -1,0 +1,100 @@
+/* Status */
+"status.ok" = "Connection OK";
+"status.slow" = "Connection is slow";
+"status.down" = "No connection";
+"status.unknown" = "Checking…";
+
+/* Metrics */
+"metric.latency" = "Latency";
+"metric.loss" = "Packet loss";
+"metric.jitter" = "Jitter";
+"metric.uptime" = "Uptime";
+"metric.min" = "Min";
+"metric.avg" = "Avg";
+"metric.max" = "Max";
+
+/* Stats */
+"stats.sent" = "Sent";
+"stats.received" = "Received";
+"stats.lost" = "Lost";
+"stats.window" = "Window size";
+
+/* Sections */
+"section.path" = "Network path";
+"section.events" = "Events";
+"path.expensive" = "Expensive";
+
+/* Fields */
+"field.target" = "Target host";
+"field.ipVersion" = "IP version";
+"field.interval" = "Interval";
+"field.timeout" = "Timeout";
+"field.payload" = "Payload";
+"field.latencyWarn" = "Latency warning";
+"field.failureDebounce" = "Failure debounce";
+"field.recoveryDebounce" = "Recovery debounce";
+"field.rollingWindow" = "Rolling window";
+
+/* IP preference */
+"ip.auto" = "Auto";
+"ip.v4" = "IPv4 only";
+"ip.v6" = "IPv6 only";
+
+/* Menu */
+"menu.dashboard" = "Open Dashboard";
+"menu.settings" = "Settings…";
+"menu.loginItem" = "Open at login";
+"menu.pause" = "Pause monitoring";
+"menu.resume" = "Resume monitoring";
+"menu.quit" = "Quit IconPing";
+
+/* Actions */
+"action.reset" = "Reset stats";
+"action.export" = "Export log…";
+
+/* Notifications */
+"notif.down.title" = "Internet connection lost";
+"notif.down.body" = "Your connection appears to be down.";
+"notif.up.title" = "Internet connection restored";
+"notif.up.body" = "Your connection is back.";
+"notif.onDown" = "Notify when connection drops";
+"notif.onUp" = "Notify when connection recovers";
+"notif.throttle" = "Throttle";
+"notif.sound" = "Play sound";
+
+/* Presets */
+"preset.default" = "Default";
+"preset.satellite" = "Satellite / Starlink";
+"preset.lan" = "LAN / wired";
+
+/* Settings tabs */
+"settings.general" = "General";
+"settings.thresholds" = "Thresholds";
+"settings.appearance" = "Appearance";
+"settings.notifications" = "Notifications";
+"settings.startup" = "Startup";
+"settings.language" = "Language";
+"settings.about" = "About";
+"settings.presets" = "Presets";
+
+/* Appearance */
+"ui.simpleMode" = "Simple mode (green / red only)";
+"ui.showLatencyText" = "Show latency text in menu bar";
+"ui.flashOnChange" = "Flash on state change";
+
+/* Language */
+"language.system" = "System default";
+"language.note" = "Requires restart to take effect.";
+
+/* About */
+"about.tagline" = "A simple connectivity light for your menu bar.";
+"about.github" = "GitHub";
+"about.license" = "License";
+"about.credit" = "Inspired by antirez's original iconping. MIT license.";
+
+/* Accessibility */
+"a11y.status" = "Connection status: %@";
+
+/* Tooltip parts */
+"tooltip.rtt" = "%.0f ms";
+"tooltip.loss" = "%.0f%% loss";

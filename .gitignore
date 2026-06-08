@@ -1,0 +1,40 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode (if added later)
+*.xcodeproj/
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/project.xcworkspace/
+*.xcworkspace/xcuserdata/
+DerivedData/
+*.xcuserstate
+*.moved-aside
+
+# Build output
+build/
+dist/
+*.app
+*.dmg
+*.zip
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Secrets (just in case)
+*.p12
+*.p8
+*.cer
+*.mobileprovision
+ExportOptions.plist
+fastlane/.env*

@@ -1,0 +1,84 @@
+"status.ok" = "Connexion OK";
+"status.slow" = "Connexion lente";
+"status.down" = "Pas de connexion";
+"status.unknown" = "Vérification…";
+
+"metric.latency" = "Latence";
+"metric.loss" = "Perte de paquets";
+"metric.jitter" = "Gigue";
+"metric.uptime" = "Disponibilité";
+"metric.min" = "Min";
+"metric.avg" = "Moyenne";
+"metric.max" = "Max";
+
+"stats.sent" = "Envoyés";
+"stats.received" = "Reçus";
+"stats.lost" = "Perdus";
+"stats.window" = "Taille de la fenêtre";
+
+"section.path" = "Chemin réseau";
+"section.events" = "Événements";
+"path.expensive" = "Connexion payante";
+
+"field.target" = "Hôte cible";
+"field.ipVersion" = "Version IP";
+"field.interval" = "Intervalle";
+"field.timeout" = "Délai d'expiration";
+"field.payload" = "Charge utile";
+"field.latencyWarn" = "Seuil de latence";
+"field.failureDebounce" = "Anti-rebond d'échec";
+"field.recoveryDebounce" = "Anti-rebond de reprise";
+"field.rollingWindow" = "Fenêtre glissante";
+
+"ip.auto" = "Automatique";
+"ip.v4" = "IPv4 uniquement";
+"ip.v6" = "IPv6 uniquement";
+
+"menu.dashboard" = "Ouvrir le tableau de bord";
+"menu.settings" = "Réglages…";
+"menu.loginItem" = "Ouvrir à la connexion";
+"menu.pause" = "Suspendre la surveillance";
+"menu.resume" = "Reprendre la surveillance";
+"menu.quit" = "Quitter IconPing";
+
+"action.reset" = "Réinitialiser les stats";
+"action.export" = "Exporter le journal…";
+
+"notif.down.title" = "Connexion Internet perdue";
+"notif.down.body" = "Votre connexion semble interrompue.";
+"notif.up.title" = "Connexion Internet rétablie";
+"notif.up.body" = "La connexion est revenue.";
+"notif.onDown" = "Notifier en cas de coupure";
+"notif.onUp" = "Notifier au rétablissement";
+"notif.throttle" = "Limiter";
+"notif.sound" = "Jouer un son";
+
+"preset.default" = "Par défaut";
+"preset.satellite" = "Satellite / Starlink";
+"preset.lan" = "LAN / filaire";
+
+"settings.general" = "Général";
+"settings.thresholds" = "Seuils";
+"settings.appearance" = "Apparence";
+"settings.notifications" = "Notifications";
+"settings.startup" = "Démarrage";
+"settings.language" = "Langue";
+"settings.about" = "À propos";
+"settings.presets" = "Préréglages";
+
+"ui.simpleMode" = "Mode simple (vert / rouge uniquement)";
+"ui.showLatencyText" = "Afficher la latence dans la barre des menus";
+"ui.flashOnChange" = "Clignoter au changement d'état";
+
+"language.system" = "Langue du système";
+"language.note" = "Nécessite un redémarrage.";
+
+"about.tagline" = "Un indicateur de connexion simple dans votre barre des menus.";
+"about.github" = "GitHub";
+"about.license" = "Licence";
+"about.credit" = "Inspiré du iconping original de antirez. Licence MIT.";
+
+"a11y.status" = "État de la connexion : %@";
+
+"tooltip.rtt" = "%.0f ms";
+"tooltip.loss" = "%.0f%% de perte";

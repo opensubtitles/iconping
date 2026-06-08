@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build .app + DMG
+        run: ./Scripts/build.sh --dmg
+
+      - name: Compute checksums
+        run: |
+          cd build
+          shasum -a 256 IconPing.dmg > IconPing.dmg.sha256
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            build/IconPing.dmg
+            build/IconPing.dmg.sha256
+          body: |
+            ## IconPing ${{ github.ref_name }}
+
+            Drag IconPing.app to /Applications and launch it from there.
+
+            **First launch:** macOS will say the app is from an unidentified developer because v1 is ad-hoc signed (no Apple Developer ID yet). Right-click the app → **Open** → **Open** in the dialog. Subsequent launches are normal.
+
+            Verify the DMG checksum:
+            ```
+            shasum -a 256 -c IconPing.dmg.sha256
+            ```

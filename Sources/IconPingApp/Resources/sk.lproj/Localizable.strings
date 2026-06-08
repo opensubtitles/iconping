@@ -1,0 +1,84 @@
+"status.ok" = "Pripojenie OK";
+"status.slow" = "Pomalé pripojenie";
+"status.down" = "Žiadne pripojenie";
+"status.unknown" = "Kontrola…";
+
+"metric.latency" = "Odozva";
+"metric.loss" = "Strata paketov";
+"metric.jitter" = "Kolísanie (jitter)";
+"metric.uptime" = "Dostupnosť";
+"metric.min" = "Min";
+"metric.avg" = "Priemer";
+"metric.max" = "Max";
+
+"stats.sent" = "Odoslané";
+"stats.received" = "Prijaté";
+"stats.lost" = "Stratené";
+"stats.window" = "Veľkosť okna";
+
+"section.path" = "Sieťová cesta";
+"section.events" = "Udalosti";
+"path.expensive" = "Spoplatnené";
+
+"field.target" = "Cieľový hostiteľ";
+"field.ipVersion" = "Verzia IP";
+"field.interval" = "Interval";
+"field.timeout" = "Časový limit";
+"field.payload" = "Veľkosť dát";
+"field.latencyWarn" = "Hranica odozvy";
+"field.failureDebounce" = "Debounce zlyhania";
+"field.recoveryDebounce" = "Debounce obnovy";
+"field.rollingWindow" = "Posuvné okno";
+
+"ip.auto" = "Automaticky";
+"ip.v4" = "Iba IPv4";
+"ip.v6" = "Iba IPv6";
+
+"menu.dashboard" = "Otvoriť prehľad";
+"menu.settings" = "Nastavenia…";
+"menu.loginItem" = "Spustiť pri prihlásení";
+"menu.pause" = "Pozastaviť monitorovanie";
+"menu.resume" = "Pokračovať v monitorovaní";
+"menu.quit" = "Ukončiť IconPing";
+
+"action.reset" = "Vynulovať štatistiku";
+"action.export" = "Exportovať záznam…";
+
+"notif.down.title" = "Pripojenie na internet sa stratilo";
+"notif.down.body" = "Vaše pripojenie sa zdá byť prerušené.";
+"notif.up.title" = "Pripojenie na internet je obnovené";
+"notif.up.body" = "Pripojenie je opäť funkčné.";
+"notif.onDown" = "Upozorniť pri výpadku";
+"notif.onUp" = "Upozorniť pri obnovení";
+"notif.throttle" = "Obmedziť";
+"notif.sound" = "Prehrať zvuk";
+
+"preset.default" = "Predvolené";
+"preset.satellite" = "Satelit / Starlink";
+"preset.lan" = "LAN / káblové";
+
+"settings.general" = "Všeobecné";
+"settings.thresholds" = "Hranice";
+"settings.appearance" = "Vzhľad";
+"settings.notifications" = "Upozornenia";
+"settings.startup" = "Spustenie";
+"settings.language" = "Jazyk";
+"settings.about" = "O aplikácii";
+"settings.presets" = "Predvoľby";
+
+"ui.simpleMode" = "Jednoduchý režim (iba zelená / červená)";
+"ui.showLatencyText" = "Zobraziť odozvu v lište";
+"ui.flashOnChange" = "Bliknúť pri zmene stavu";
+
+"language.system" = "Systémový jazyk";
+"language.note" = "Vyžaduje reštart aplikácie.";
+
+"about.tagline" = "Jednoduchý indikátor pripojenia v lište.";
+"about.github" = "GitHub";
+"about.license" = "Licencia";
+"about.credit" = "Inšpirované pôvodným iconping od antireza. Licencia MIT.";
+
+"a11y.status" = "Stav pripojenia: %@";
+
+"tooltip.rtt" = "%.0f ms";
+"tooltip.loss" = "%.0f%% straty";

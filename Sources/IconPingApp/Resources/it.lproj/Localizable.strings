@@ -1,0 +1,84 @@
+"status.ok" = "Connessione OK";
+"status.slow" = "Connessione lenta";
+"status.down" = "Nessuna connessione";
+"status.unknown" = "Controllo in corso…";
+
+"metric.latency" = "Latenza";
+"metric.loss" = "Perdita di pacchetti";
+"metric.jitter" = "Jitter";
+"metric.uptime" = "Tempo di attività";
+"metric.min" = "Min";
+"metric.avg" = "Media";
+"metric.max" = "Max";
+
+"stats.sent" = "Inviati";
+"stats.received" = "Ricevuti";
+"stats.lost" = "Persi";
+"stats.window" = "Dimensione finestra";
+
+"section.path" = "Percorso di rete";
+"section.events" = "Eventi";
+"path.expensive" = "A consumo";
+
+"field.target" = "Host di destinazione";
+"field.ipVersion" = "Versione IP";
+"field.interval" = "Intervallo";
+"field.timeout" = "Timeout";
+"field.payload" = "Payload";
+"field.latencyWarn" = "Soglia di latenza";
+"field.failureDebounce" = "Debounce di errore";
+"field.recoveryDebounce" = "Debounce di recupero";
+"field.rollingWindow" = "Finestra mobile";
+
+"ip.auto" = "Automatico";
+"ip.v4" = "Solo IPv4";
+"ip.v6" = "Solo IPv6";
+
+"menu.dashboard" = "Apri pannello";
+"menu.settings" = "Impostazioni…";
+"menu.loginItem" = "Apri all'avvio";
+"menu.pause" = "Sospendi monitoraggio";
+"menu.resume" = "Riprendi monitoraggio";
+"menu.quit" = "Esci da IconPing";
+
+"action.reset" = "Azzera statistiche";
+"action.export" = "Esporta log…";
+
+"notif.down.title" = "Connessione a Internet persa";
+"notif.down.body" = "La connessione sembra interrotta.";
+"notif.up.title" = "Connessione a Internet ripristinata";
+"notif.up.body" = "La connessione è tornata.";
+"notif.onDown" = "Notifica se la connessione cade";
+"notif.onUp" = "Notifica al ripristino";
+"notif.throttle" = "Limita";
+"notif.sound" = "Riproduci suono";
+
+"preset.default" = "Predefinito";
+"preset.satellite" = "Satellite / Starlink";
+"preset.lan" = "LAN / cablata";
+
+"settings.general" = "Generale";
+"settings.thresholds" = "Soglie";
+"settings.appearance" = "Aspetto";
+"settings.notifications" = "Notifiche";
+"settings.startup" = "Avvio";
+"settings.language" = "Lingua";
+"settings.about" = "Informazioni";
+"settings.presets" = "Preset";
+
+"ui.simpleMode" = "Modalità semplice (solo verde / rosso)";
+"ui.showLatencyText" = "Mostra la latenza nella barra dei menu";
+"ui.flashOnChange" = "Lampeggia al cambio di stato";
+
+"language.system" = "Predefinita del sistema";
+"language.note" = "Richiede il riavvio.";
+
+"about.tagline" = "Una semplice spia di connettività nella barra dei menu.";
+"about.github" = "GitHub";
+"about.license" = "Licenza";
+"about.credit" = "Ispirato da iconping di antirez. Licenza MIT.";
+
+"a11y.status" = "Stato connessione: %@";
+
+"tooltip.rtt" = "%.0f ms";
+"tooltip.loss" = "%.0f%% perdita";
