@@ -5,62 +5,72 @@ import AppKit
 
 struct DashboardView: View {
     @ObservedObject var viewModel: AppViewModel
-    @State private var showExportPanel = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                header
-                Divider()
-                chart
-                Divider()
-                statsGrid
-                Divider()
-                networkPath
-                Divider()
-                eventLog
-            }
-            .padding(20)
+        VStack(alignment: .leading, spacing: 12) {
+            header
+            chart
+                .frame(height: 130)
+            statsGrid
+            networkPath
+            eventLog
         }
-        .frame(minWidth: 720, minHeight: 560)
-        .navigationTitle("IconPing")
+        .padding(14)
+        .frame(width: 720, height: 540, alignment: .topLeading)
     }
+
+    // MARK: - Header
 
     private var header: some View {
-        HStack(spacing: 16) {
+        HStack(alignment: .center, spacing: 12) {
             StateBadge(state: viewModel.state)
-                .scaleEffect(1.6)
-                .padding(6)
+                .scaleEffect(1.15)
+                .frame(width: 36, height: 36)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(LocalizedStringKey(viewModel.state.localizationKey))
-                    .font(.largeTitle.bold())
-                HStack(spacing: 8) {
+                    .font(.title3.bold())
+                HStack(spacing: 6) {
                     Text(viewModel.engineConfig.targetHost)
-                        .foregroundStyle(.secondary)
-                    Text("·")
-                        .foregroundStyle(.secondary)
+                    Text("·").foregroundStyle(.tertiary)
                     Text(viewModel.resolvedAddress)
-                        .foregroundStyle(.secondary)
-                    Text("·")
-                        .foregroundStyle(.secondary)
+                    Text("·").foregroundStyle(.tertiary)
                     Text(viewModel.ipVersionInUse.rawValue.uppercased())
-                        .foregroundStyle(.secondary)
-                        .font(.caption.bold())
-                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .font(.caption2.bold())
+                        .padding(.horizontal, 5).padding(.vertical, 1)
                         .background(.quaternary, in: Capsule())
                 }
-                .font(.callout)
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
+
             Spacer()
-            VStack(alignment: .trailing) {
-                Text(rttString)
-                    .font(.system(.title, design: .rounded).monospacedDigit())
-                Text(LocalizedStringKey("metric.latency"))
-                    .font(.caption).foregroundStyle(.secondary)
+
+            HStack(spacing: 6) {
+                Button {
+                    viewModel.togglePause()
+                } label: {
+                    Image(systemName: viewModel.paused ? "play.fill" : "pause.fill")
+                }
+                .help(viewModel.paused ? "menu.resume" : "menu.pause")
+
+                Button {
+                    viewModel.resetStats()
+                } label: {
+                    Text(LocalizedStringKey("action.reset"))
+                }
+
+                Button {
+                    exportCSV()
+                } label: {
+                    Text(LocalizedStringKey("action.export"))
+                }
             }
+            .controlSize(.small)
         }
     }
+
+    // MARK: - Chart
 
     private var chart: some View {
         let data = Array(viewModel.recentSamples.suffix(viewModel.thresholds.rollingWindow))
@@ -74,7 +84,7 @@ struct DashboardView: View {
                     .foregroundStyle(Color.accentColor)
                 } else {
                     RuleMark(x: .value("seq", Int(s.seq)))
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.red.opacity(0.7))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [2,2]))
                 }
             }
@@ -82,101 +92,112 @@ struct DashboardView: View {
                 .foregroundStyle(.orange.opacity(0.6))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [4,4]))
         }
-        .chartYAxisLabel(LocalizedStringKey("metric.latency"))
-        .frame(height: 200)
-    }
-
-    private var statsGrid: some View {
-        let snap = viewModel.snapshot
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: 4), spacing: 12) {
-            StatCard(labelKey: "metric.min", value: ms(snap.rttMinMs))
-            StatCard(labelKey: "metric.avg", value: ms(snap.rttAvgMs))
-            StatCard(labelKey: "metric.max", value: ms(snap.rttMaxMs))
-            StatCard(labelKey: "metric.jitter", value: ms(snap.jitterMs))
-            StatCard(labelKey: "metric.loss",   value: String(format: "%.1f%%", snap.lossPercent))
-            StatCard(labelKey: "metric.uptime", value: String(format: "%.1f%%", snap.uptimePercent))
-            StatCard(labelKey: "stats.sent",     value: "\(snap.sent)")
-            StatCard(labelKey: "stats.received", value: "\(snap.received)")
-            StatCard(labelKey: "stats.lost",     value: "\(snap.lost)")
-            StatCard(labelKey: "stats.window",   value: "\(snap.windowSize)")
-        }
-        .overlay(alignment: .topTrailing) {
-            HStack(spacing: 8) {
-                Button {
-                    viewModel.resetStats()
-                } label: {
-                    Text(LocalizedStringKey("action.reset"))
-                }
-                Button {
-                    exportCSV()
-                } label: {
-                    Text(LocalizedStringKey("action.export"))
-                }
-            }
-        }
-    }
-
-    private var networkPath: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(LocalizedStringKey("section.path"))
-                .font(.headline)
-            HStack(spacing: 24) {
-                Label(viewModel.pathInfo?.interfaceTypes.joined(separator: ", ") ?? "—",
-                      systemImage: "network")
-                if let p = viewModel.pathInfo {
-                    Label(p.supportsIPv4 ? "IPv4" : "—", systemImage: "4.circle")
-                    Label(p.supportsIPv6 ? "IPv6" : "—", systemImage: "6.circle")
-                    if p.isExpensive {
-                        Label(LocalizedStringKey("path.expensive"), systemImage: "creditcard")
-                            .foregroundStyle(.orange)
+        .chartXAxis(.hidden)
+        .chartYAxis {
+            AxisMarks(position: .leading) { value in
+                AxisGridLine()
+                AxisValueLabel() {
+                    if let v = value.as(Double.self) {
+                        Text("\(Int(v))").font(.caption2)
                     }
                 }
             }
-            .font(.callout)
+        }
+        .padding(.horizontal, 4)
+        .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 6))
+    }
+
+    // MARK: - Stats grid (4 cols × 3 rows, compact)
+
+    private var statsGrid: some View {
+        let s = viewModel.snapshot
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 6) {
+            StatCell(labelKey: "metric.min",    value: ms(s.rttMinMs))
+            StatCell(labelKey: "metric.avg",    value: ms(s.rttAvgMs))
+            StatCell(labelKey: "metric.max",    value: ms(s.rttMaxMs))
+            StatCell(labelKey: "metric.latency",value: ms(s.rttLastMs))
+
+            StatCell(labelKey: "metric.jitter", value: ms(s.jitterMs))
+            StatCell(labelKey: "metric.loss",   value: String(format: "%.1f%%", s.lossPercent))
+            StatCell(labelKey: "metric.uptime", value: String(format: "%.1f%%", s.uptimePercent))
+            StatCell(labelKey: "stats.window",  value: "\(s.windowSize)")
+
+            StatCell(labelKey: "stats.sent",     value: "\(s.sent)")
+            StatCell(labelKey: "stats.received", value: "\(s.received)")
+            StatCell(labelKey: "stats.lost",     value: "\(s.lost)")
+            StatCell(labelKey: "stats.since",    value: relativeSince(s.since))
         }
     }
 
+    // MARK: - Network path
+
+    private var networkPath: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "network").foregroundStyle(.secondary)
+            Text(viewModel.pathInfo?.interfaceTypes.joined(separator: ", ") ?? "—")
+            if let p = viewModel.pathInfo {
+                Text("·").foregroundStyle(.tertiary)
+                Text(p.supportsIPv4 ? "IPv4" : "—").foregroundStyle(p.supportsIPv4 ? .primary : .tertiary)
+                Text("·").foregroundStyle(.tertiary)
+                Text(p.supportsIPv6 ? "IPv6" : "—").foregroundStyle(p.supportsIPv6 ? .primary : .tertiary)
+                if p.isExpensive {
+                    Text("·").foregroundStyle(.tertiary)
+                    Label(LocalizedStringKey("path.expensive"), systemImage: "creditcard")
+                        .foregroundStyle(.orange)
+                }
+            }
+            Spacer()
+        }
+        .font(.caption)
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
+    }
+
+    // MARK: - Event log
+
     private var eventLog: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(LocalizedStringKey("section.events"))
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(LocalizedStringKey("section.events"))
+                    .font(.caption.bold())
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("\(viewModel.transitions.count)")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.tertiary)
+            }
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 4) {
-                    ForEach(viewModel.transitions) { t in
-                        HStack(spacing: 10) {
-                            Text(t.at, style: .time)
-                                .font(.system(.callout, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                            HStack(spacing: 4) {
-                                Text(LocalizedStringKey(t.from.localizationKey))
-                                Image(systemName: "arrow.right")
-                                Text(LocalizedStringKey(t.to.localizationKey))
-                                    .bold()
-                            }
-                            if let note = t.note {
-                                Text("(\(note))").foregroundStyle(.secondary)
-                            }
-                            Spacer()
+                LazyVStack(alignment: .leading, spacing: 2) {
+                    if viewModel.transitions.isEmpty {
+                        Text(LocalizedStringKey("events.none"))
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .padding(.vertical, 4)
+                    } else {
+                        ForEach(viewModel.transitions) { t in
+                            EventRow(transition: t)
                         }
                     }
                 }
                 .padding(8)
             }
-            .frame(maxHeight: 180)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            .frame(maxHeight: .infinity)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
         }
     }
 
-    // MARK: - helpers
-
-    private var rttString: String {
-        if let ms = viewModel.snapshot.rttLastMs { return String(format: "%.0f ms", ms) }
-        return "—"
-    }
+    // MARK: - Helpers
 
     private func ms(_ value: Double?) -> String {
         if let v = value { return String(format: "%.0f ms", v) }
         return "—"
+    }
+
+    private func relativeSince(_ date: Date) -> String {
+        let s = Int(Date().timeIntervalSince(date))
+        if s < 60 { return "\(s)s" }
+        if s < 3600 { return "\(s / 60)m" }
+        return String(format: "%dh%02dm", s / 3600, (s % 3600) / 60)
     }
 
     private func exportCSV() {
@@ -196,21 +217,45 @@ struct DashboardView: View {
     }
 }
 
-struct StatCard: View {
+struct StatCell: View {
     let labelKey: String
     let value: String
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 1) {
             Text(LocalizedStringKey(labelKey))
-                .font(.caption)
+                .font(.caption2)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
             Text(value)
-                .font(.system(.title3, design: .rounded).weight(.medium))
+                .font(.system(.body, design: .rounded).weight(.medium))
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
-        .padding(10)
+        .padding(.horizontal, 8).padding(.vertical, 5)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 5))
+    }
+}
+
+struct EventRow: View {
+    let transition: StateTransition
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(transition.at, format: .dateTime.hour().minute().second())
+                .font(.system(.caption, design: .monospaced))
+                .foregroundStyle(.secondary)
+            Text(LocalizedStringKey(transition.from.localizationKey))
+                .font(.caption)
+            Image(systemName: "arrow.right")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+            Text(LocalizedStringKey(transition.to.localizationKey))
+                .font(.caption.bold())
+            if let note = transition.note {
+                Text("(\(note))").font(.caption2).foregroundStyle(.tertiary)
+            }
+            Spacer()
+        }
     }
 }

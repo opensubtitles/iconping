@@ -8,47 +8,62 @@ final class WindowManager {
     private var dashboardWindow: NSWindow?
     private var settingsWindow: NSWindow?
 
+    // Internal accessors used by the debug-screenshot path in IconPingApp.swift.
+    var dashboardWindow_internal: NSWindow? { dashboardWindow }
+    var settingsWindow_internal:  NSWindow? { settingsWindow }
+
     func openDashboard(viewModel: AppViewModel) {
         if let w = dashboardWindow {
-            w.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            foregroundWindow(w)
             return
         }
         let host = NSHostingController(rootView: DashboardView(viewModel: viewModel))
         let window = NSWindow(contentViewController: host)
         window.title = "IconPing — Dashboard"
-        window.setContentSize(NSSize(width: 760, height: 600))
-        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+        window.setContentSize(NSSize(width: 720, height: 540))
+        window.styleMask = [.titled, .closable, .miniaturizable]
         window.isReleasedWhenClosed = false
+        window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
         window.center()
         window.delegate = WindowDelegateProxy.shared
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
         dashboardWindow = window
+        foregroundWindow(window)
     }
 
     func openSettings(viewModel: AppViewModel) {
         if let w = settingsWindow {
-            w.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            foregroundWindow(w)
             return
         }
         let host = NSHostingController(rootView: SettingsView(viewModel: viewModel))
         let window = NSWindow(contentViewController: host)
         window.title = "IconPing — Settings"
-        window.setContentSize(NSSize(width: 540, height: 440))
+        window.setContentSize(NSSize(width: 580, height: 460))
         window.styleMask = [.titled, .closable]
         window.isReleasedWhenClosed = false
+        window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
         window.center()
         window.delegate = WindowDelegateProxy.shared
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
         settingsWindow = window
+        foregroundWindow(window)
     }
 
     func handleWindowClose(_ window: NSWindow) {
         if window === dashboardWindow { dashboardWindow = nil }
         if window === settingsWindow  { settingsWindow  = nil }
+        if dashboardWindow == nil && settingsWindow == nil {
+            // Drop back to menu-bar-only mode when all windows are closed.
+            NSApp.setActivationPolicy(.accessory)
+        }
+    }
+
+    private func foregroundWindow(_ window: NSWindow) {
+        // Promote to a regular foreground app while any window is visible — required
+        // for an LSUIElement/accessory app to gain focus and appear on the current Space.
+        NSApp.setActivationPolicy(.regular)
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
     }
 }
 

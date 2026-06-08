@@ -65,6 +65,9 @@
 "settings.language" = "Lingua";
 "settings.about" = "Informazioni";
 "settings.presets" = "Preset";
+"settings.timing" = "Tempi";
+"events.none" = "Nessuna transizione ancora.";
+"stats.since" = "Dal reset";
 
 "ui.simpleMode" = "Modalità semplice (solo verde / rosso)";
 "ui.showLatencyText" = "Mostra la latenza nella barra dei menu";

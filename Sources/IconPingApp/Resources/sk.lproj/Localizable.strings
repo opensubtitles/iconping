@@ -65,6 +65,9 @@
 "settings.language" = "Jazyk";
 "settings.about" = "O aplikácii";
 "settings.presets" = "Predvoľby";
+"settings.timing" = "Časovanie";
+"events.none" = "Zatiaľ žiadne zmeny stavu.";
+"stats.since" = "Od resetu";
 
 "ui.simpleMode" = "Jednoduchý režim (iba zelená / červená)";
 "ui.showLatencyText" = "Zobraziť odozvu v lište";

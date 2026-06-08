@@ -76,6 +76,9 @@
 "settings.language" = "Language";
 "settings.about" = "About";
 "settings.presets" = "Presets";
+"settings.timing" = "Timing";
+"events.none" = "No state transitions yet.";
+"stats.since" = "Since reset";
 
 /* Appearance */
 "ui.simpleMode" = "Simple mode (green / red only)";
