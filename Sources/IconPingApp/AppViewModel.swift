@@ -19,7 +19,9 @@ final class AppViewModel: ObservableObject {
 
     enum SpeedTestState: Equatable {
         case idle
-        case running(bytes: Int, mbpsLive: Double, elapsed: Double)
+        /// `completedDownload` is non-nil once the upload phase starts.
+        case running(phase: SpeedTester.Phase, bytes: Int, mbpsLive: Double,
+                     elapsed: Double, completedDownload: PhaseResult?)
         case finished(SpeedTestResult)
     }
     @Published var speedTestState: SpeedTestState = .idle
@@ -139,20 +141,55 @@ final class AppViewModel: ObservableObject {
 
     func startSpeedTest(timeLimit: TimeInterval = 8.0) {
         guard speedTask == nil else { return }
+
+        // Snapshot the result of the just-finished download so the upload-phase
+        // UI can show "↓ 142 Mbps" while measuring upload.
+        var downloadResult: PhaseResult? = nil
+
         let tester = SpeedTester(timeLimit: timeLimit) { [weak self] progress in
             guard let self else { return }
             self.speedTestState = .running(
-                bytes: progress.bytesReceived,
+                phase: progress.phase,
+                bytes: progress.bytes,
                 mbpsLive: progress.mbpsLive,
-                elapsed: progress.elapsedSeconds
+                elapsed: progress.elapsedSeconds,
+                completedDownload: downloadResult
             )
         }
         self.speedTester = tester
-        self.speedTestState = .running(bytes: 0, mbpsLive: 0, elapsed: 0)
+        self.speedTestState = .running(phase: .download, bytes: 0, mbpsLive: 0,
+                                       elapsed: 0, completedDownload: nil)
+
         speedTask = Task { [weak self] in
-            let result = await tester.run()
+            // Phase 1: download
+            let down = await tester.runDownload()
+
+            // If user cancelled, finish here with a synthetic upload result.
+            if let err = down.errorDescription, err == "Cancelled" {
+                let res = SpeedTestResult(download: down, upload: .pending,
+                                          serverHost: SpeedTester.serverHost)
+                await MainActor.run {
+                    self?.speedTestState = .finished(res)
+                    self?.speedTask = nil
+                    self?.speedTester = nil
+                }
+                return
+            }
+
+            // Hand off download result to the progress callback closure.
+            downloadResult = down
             await MainActor.run {
-                self?.speedTestState = .finished(result)
+                self?.speedTestState = .running(phase: .upload, bytes: 0, mbpsLive: 0,
+                                                elapsed: 0, completedDownload: down)
+            }
+
+            // Phase 2: upload
+            let up = await tester.runUpload()
+
+            let res = SpeedTestResult(download: down, upload: up,
+                                      serverHost: SpeedTester.serverHost)
+            await MainActor.run {
+                self?.speedTestState = .finished(res)
                 self?.speedTask = nil
                 self?.speedTester = nil
             }

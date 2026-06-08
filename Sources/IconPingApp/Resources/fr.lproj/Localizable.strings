@@ -87,13 +87,16 @@
 /* Speed test */
 "action.speedtest" = "Test de débit";
 "action.speedtest.help" = "Mesure la vitesse de téléchargement en Mbps via Cloudflare.";
-"speedtest.running" = "Mesure du débit en cours…";
+"speedtest.running.download" = "Mesure du débit descendant…";
+"speedtest.running.upload"   = "Mesure du débit montant…";
 "speedtest.cancel" = "Annuler";
+"speedtest.cancelled" = "Annulé";
 "speedtest.again" = "Refaire le test";
 "speedtest.dismiss" = "OK";
-"speedtest.summary" = "%.1f Mo en %.1f s · %@";
-"speedtest.downloaded" = "Téléchargé";
+"speedtest.transferred" = "Transféré";
 "speedtest.elapsed" = "Temps";
+"speedtest.download" = "Descente";
+"speedtest.upload" = "Montée";
 "speedtest.excellent" = "Excellent — ultra-rapide";
 "speedtest.good" = "Bon — bien rapide";
 "speedtest.fair" = "Correct — utilisable";

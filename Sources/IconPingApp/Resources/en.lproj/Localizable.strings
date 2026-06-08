@@ -101,13 +101,16 @@
 /* Speed test (download bandwidth via HTTP) */
 "action.speedtest" = "Speed test";
 "action.speedtest.help" = "Measure your download speed in Mbps using a Cloudflare endpoint.";
-"speedtest.running" = "Measuring download speed…";
+"speedtest.running.download" = "Measuring download speed…";
+"speedtest.running.upload"   = "Measuring upload speed…";
 "speedtest.cancel" = "Cancel";
+"speedtest.cancelled" = "Cancelled";
 "speedtest.again" = "Test again";
 "speedtest.dismiss" = "Done";
-"speedtest.summary" = "%.1f MB in %.1f s · %@";
-"speedtest.downloaded" = "Downloaded";
+"speedtest.transferred" = "Transferred";
 "speedtest.elapsed" = "Elapsed";
+"speedtest.download" = "Download";
+"speedtest.upload" = "Upload";
 "speedtest.excellent" = "Excellent — ultra-fast";
 "speedtest.good" = "Good — plenty fast";
 "speedtest.fair" = "Fair — usable";

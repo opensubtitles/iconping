@@ -297,13 +297,14 @@ struct SpeedTestCard: View {
             switch viewModel.speedTestState {
             case .idle:
                 EmptyView()
-            case .running(let bytes, let mbpsLive, let elapsed):
-                runningView(bytes: bytes, mbpsLive: mbpsLive, elapsed: elapsed)
+            case .running(let phase, let bytes, let mbpsLive, let elapsed, let download):
+                runningView(phase: phase, bytes: bytes, mbpsLive: mbpsLive,
+                            elapsed: elapsed, completedDownload: download)
             case .finished(let result):
                 resultsView(result)
             }
         }
-        .padding(22)
+        .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             RoundedRectangle(cornerRadius: 10)
@@ -317,77 +318,90 @@ struct SpeedTestCard: View {
     }
 
     @ViewBuilder
-    private func runningView(bytes: Int, mbpsLive: Double, elapsed: Double) -> some View {
-        VStack(spacing: 12) {
+    private func runningView(phase: SpeedTester.Phase, bytes: Int, mbpsLive: Double,
+                             elapsed: Double, completedDownload: PhaseResult?) -> some View {
+        VStack(spacing: 10) {
             HStack(spacing: 10) {
                 ProgressView().controlSize(.small)
-                Text(LocalizedStringKey("speedtest.running")).font(.headline)
-                Spacer()
-            }
-            // Big live Mbps readout
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(String(format: "%.1f", mbpsLive))
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(.tint)
-                Text("Mbps")
-                    .font(.title3.bold())
-                    .foregroundStyle(.secondary)
-            }
-            HStack(spacing: 14) {
-                liveStat("speedtest.downloaded",
-                         String(format: "%.1f MB", Double(bytes) / (1024.0 * 1024.0)))
-                liveStat("speedtest.elapsed",
-                         String(format: "%.1fs", elapsed))
-            }
-            ProgressView(value: min(elapsed / 8.0, 1.0))
-                .progressViewStyle(.linear)
-                .tint(Color.accentColor)
-                .frame(maxWidth: 320)
-
-            HStack {
+                Text(LocalizedStringKey(phase == .download
+                                        ? "speedtest.running.download"
+                                        : "speedtest.running.upload"))
+                    .font(.headline)
                 Spacer()
                 Button {
                     viewModel.cancelSpeedTest()
                 } label: { Text(LocalizedStringKey("speedtest.cancel")) }
                 .controlSize(.small)
             }
+
+            // Live big Mbps readout
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Image(systemName: phase == .download ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.tint)
+                Text(String(format: "%.1f", mbpsLive))
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.tint)
+                Text("Mbps")
+                    .font(.title3.bold())
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 18) {
+                liveStat("speedtest.transferred",
+                         String(format: "%.1f MB", Double(bytes) / (1024.0 * 1024.0)))
+                liveStat("speedtest.elapsed",
+                         String(format: "%.1fs", elapsed))
+            }
+
+            ProgressView(value: min(elapsed / 8.0, 1.0))
+                .progressViewStyle(.linear)
+                .tint(Color.accentColor)
+                .frame(maxWidth: 360)
+
+            // While uploading we already know the download number — show it as a chip
+            // so the user can see total progress at a glance.
+            if let down = completedDownload {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.down.circle.fill").foregroundStyle(.green)
+                    Text(String(format: "%.1f Mbps", down.mbps))
+                        .font(.callout.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                    Text(LocalizedStringKey("speedtest.download"))
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.top, 4)
+            }
         }
     }
 
     @ViewBuilder
     private func resultsView(_ result: SpeedTestResult) -> some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             verdictBadge(result.verdict)
             VStack(alignment: .leading, spacing: 2) {
                 verdictTitle(result.verdict)
                     .font(.title3.bold())
-                if let err = result.errorDescription {
-                    Text(err)
-                        .font(.caption).foregroundStyle(.red)
-                        .lineLimit(2)
-                } else {
-                    Text(String(format: NSLocalizedString("speedtest.summary",
-                                                         value: "%.1f MB in %.1f s · %@",
-                                                         comment: ""),
-                                result.megabytesReceived,
-                                result.durationSeconds,
-                                result.serverHost))
-                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                }
+                Text(result.serverHost)
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
         }
 
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text(String(format: "%.1f", result.mbps))
-                .font(.system(size: 56, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(verdictStyle(result.verdict).1)
-            Text("Mbps")
-                .font(.title2.bold()).foregroundStyle(.secondary)
-            Spacer()
+        HStack(spacing: 24) {
+            phaseColumn(title: "speedtest.download",
+                        icon: "arrow.down.circle.fill",
+                        phase: result.download,
+                        verdict: result.verdict)
+            Divider().frame(height: 70)
+            phaseColumn(title: "speedtest.upload",
+                        icon: "arrow.up.circle.fill",
+                        phase: result.upload,
+                        verdict: result.verdict)
         }
+        .padding(.vertical, 6)
 
         HStack {
             Button {
@@ -400,6 +414,41 @@ struct SpeedTestCard: View {
             .keyboardShortcut(.defaultAction)
         }
         .controlSize(.small)
+    }
+
+    @ViewBuilder
+    private func phaseColumn(title: String, icon: String, phase: PhaseResult,
+                             verdict: SpeedTestResult.Verdict) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: icon).foregroundStyle(.secondary)
+                Text(LocalizedStringKey(title))
+                    .font(.caption.bold())
+                    .foregroundStyle(.secondary)
+            }
+            if let err = phase.errorDescription, err != "Cancelled" {
+                Text("—").font(.system(size: 36, weight: .bold, design: .rounded))
+                    .foregroundStyle(.red)
+                Text(err).font(.caption2).foregroundStyle(.red).lineLimit(1)
+            } else if phase.errorDescription == "Cancelled" {
+                Text("—").font(.system(size: 36, weight: .bold, design: .rounded))
+                    .foregroundStyle(.secondary)
+                Text("speedtest.cancelled").font(.caption2).foregroundStyle(.secondary)
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(String(format: "%.1f", phase.mbps))
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(phase.mbps > 0 ? verdictStyle(verdict).1 : .secondary)
+                    Text("Mbps")
+                        .font(.caption.bold()).foregroundStyle(.secondary)
+                }
+                Text(String(format: "%.1f MB · %.1f s", phase.megabytes, phase.durationSeconds))
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder

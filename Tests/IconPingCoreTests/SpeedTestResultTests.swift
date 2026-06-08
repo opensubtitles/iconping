@@ -3,52 +3,68 @@ import XCTest
 
 final class SpeedTestResultTests: XCTestCase {
 
-    private func make(mbps: Double, error: String? = nil) -> SpeedTestResult {
-        SpeedTestResult(
+    private func phase(mbps: Double, error: String? = nil) -> PhaseResult {
+        PhaseResult(
             mbps: mbps,
-            bytesReceived: Int(mbps * 1_000_000 / 8 * 8),  // 8s of bandwidth
+            bytes: Int(mbps * 1_000_000),
             durationSeconds: 8.0,
-            serverHost: "speed.cloudflare.com",
             errorDescription: error
         )
     }
 
+    private func make(download: Double, upload: Double = 10,
+                      downloadError: String? = nil) -> SpeedTestResult {
+        SpeedTestResult(
+            download: phase(mbps: download, error: downloadError),
+            upload: phase(mbps: upload),
+            serverHost: "speed.cloudflare.com"
+        )
+    }
+
     func testExcellent_AtBoundary() {
-        XCTAssertEqual(make(mbps: 100).verdict, .excellent)
-        XCTAssertEqual(make(mbps: 500).verdict, .excellent)
+        XCTAssertEqual(make(download: 100).verdict, .excellent)
+        XCTAssertEqual(make(download: 500).verdict, .excellent)
     }
 
     func testGood() {
-        XCTAssertEqual(make(mbps: 50).verdict, .good)
-        XCTAssertEqual(make(mbps: 25).verdict, .good, "25 Mbps is the inclusive lower bound")
-        XCTAssertEqual(make(mbps: 99.9).verdict, .good)
+        XCTAssertEqual(make(download: 50).verdict, .good)
+        XCTAssertEqual(make(download: 25).verdict, .good, "25 Mbps is inclusive lower bound")
+        XCTAssertEqual(make(download: 99.9).verdict, .good)
     }
 
     func testFair() {
-        XCTAssertEqual(make(mbps: 10).verdict, .fair)
-        XCTAssertEqual(make(mbps: 5).verdict, .fair, "5 Mbps is the inclusive lower bound")
-        XCTAssertEqual(make(mbps: 24.9).verdict, .fair)
+        XCTAssertEqual(make(download: 10).verdict, .fair)
+        XCTAssertEqual(make(download: 5).verdict, .fair)
+        XCTAssertEqual(make(download: 24.9).verdict, .fair)
     }
 
     func testPoor() {
-        XCTAssertEqual(make(mbps: 2).verdict, .poor)
-        XCTAssertEqual(make(mbps: 4.99).verdict, .poor)
+        XCTAssertEqual(make(download: 2).verdict, .poor)
+        XCTAssertEqual(make(download: 4.99).verdict, .poor)
     }
 
     func testBrokenOnSubMbps() {
-        XCTAssertEqual(make(mbps: 0.5).verdict, .broken)
-        XCTAssertEqual(make(mbps: 0).verdict, .broken)
+        XCTAssertEqual(make(download: 0.5).verdict, .broken)
+        XCTAssertEqual(make(download: 0).verdict, .broken)
     }
 
-    func testBrokenOnError() {
-        XCTAssertEqual(make(mbps: 50, error: "timeout").verdict, .broken,
-                       "any error short-circuits to broken regardless of Mbps")
+    func testBrokenOnDownloadError() {
+        XCTAssertEqual(make(download: 50, downloadError: "timeout").verdict, .broken,
+                       "download error short-circuits to broken regardless of Mbps")
     }
 
-    func testMegabytesReceivedComputation() {
-        let r = SpeedTestResult(mbps: 80, bytesReceived: 10_485_760,  // exactly 10 MiB
-                                durationSeconds: 1.0,
-                                serverHost: "x", errorDescription: nil)
-        XCTAssertEqual(r.megabytesReceived, 10.0, accuracy: 0.001)
+    func testUploadErrorDoesNotAffectVerdict() {
+        // High download with broken upload should still verdict on download.
+        let r = SpeedTestResult(
+            download: phase(mbps: 150),
+            upload: phase(mbps: 0, error: "Cancelled"),
+            serverHost: "x"
+        )
+        XCTAssertEqual(r.verdict, .excellent)
+    }
+
+    func testPhaseMegabytes() {
+        let p = PhaseResult(mbps: 80, bytes: 10_485_760, durationSeconds: 1.0)
+        XCTAssertEqual(p.megabytes, 10.0, accuracy: 0.001)
     }
 }

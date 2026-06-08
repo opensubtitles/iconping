@@ -160,41 +160,52 @@ public struct Preset: Sendable, Equatable {
     public static let all: [Preset] = [.default, .satellite, .lan]
 }
 
-/// Result of a one-shot bandwidth speed test against an HTTPS endpoint.
-public struct SpeedTestResult: Sendable, Equatable {
+/// Result of one phase (download or upload) of a bandwidth speed test.
+public struct PhaseResult: Sendable, Equatable {
     public let mbps: Double
-    public let bytesReceived: Int
+    public let bytes: Int
     public let durationSeconds: Double
-    public let serverHost: String
     public let errorDescription: String?
 
-    public init(
-        mbps: Double, bytesReceived: Int, durationSeconds: Double,
-        serverHost: String, errorDescription: String? = nil
-    ) {
+    public init(mbps: Double, bytes: Int, durationSeconds: Double, errorDescription: String? = nil) {
         self.mbps = mbps
-        self.bytesReceived = bytesReceived
+        self.bytes = bytes
         self.durationSeconds = durationSeconds
-        self.serverHost = serverHost
         self.errorDescription = errorDescription
+    }
+
+    public static let pending = PhaseResult(mbps: 0, bytes: 0, durationSeconds: 0, errorDescription: nil)
+
+    public var megabytes: Double { Double(bytes) / (1024.0 * 1024.0) }
+}
+
+/// Full speed-test result combining a download phase and an upload phase.
+public struct SpeedTestResult: Sendable, Equatable {
+    public let download: PhaseResult
+    public let upload: PhaseResult
+    public let serverHost: String
+
+    public init(download: PhaseResult, upload: PhaseResult, serverHost: String) {
+        self.download = download
+        self.upload = upload
+        self.serverHost = serverHost
     }
 
     public enum Verdict: String, Sendable {
         case excellent, good, fair, poor, broken
     }
 
-    /// Brackets tuned for residential broadband in 2026 — adjust if needed.
+    /// Verdict is keyed off the *download* number — that's what people mean by
+    /// "fast internet" colloquially. Upload number is shown but doesn't drive
+    /// the color/icon.
     public var verdict: Verdict {
-        if errorDescription != nil { return .broken }
-        if mbps < 1     { return .broken }
-        if mbps >= 100  { return .excellent }
-        if mbps >= 25   { return .good }
-        if mbps >= 5    { return .fair }
+        if download.errorDescription != nil { return .broken }
+        let m = download.mbps
+        if m < 1     { return .broken }
+        if m >= 100  { return .excellent }
+        if m >= 25   { return .good }
+        if m >= 5    { return .fair }
         return .poor
-    }
-
-    public var megabytesReceived: Double {
-        Double(bytesReceived) / (1024.0 * 1024.0)
     }
 }
 
