@@ -98,6 +98,19 @@
 "field.target.invalid" = "Invalid hostname or IP address.";
 "action.resetAll" = "Reset all settings to defaults";
 
+/* Quick test */
+"action.quicktest" = "Quick test";
+"action.quicktest.help" = "Run a 30-ping burst to measure your connection right now.";
+"quicktest.running" = "Running quick test…";
+"quicktest.again" = "Test again";
+"quicktest.dismiss" = "Done";
+"quicktest.summary" = "%d / %d replies in %.1f s";
+"quicktest.excellent" = "Excellent connection";
+"quicktest.good" = "Good connection";
+"quicktest.fair" = "Fair connection";
+"quicktest.poor" = "Poor connection";
+"quicktest.broken" = "Connection failed";
+
 /* Language */
 "language.system" = "System default";
 "language.fallback" = "If your system language isn't listed, English is used.";

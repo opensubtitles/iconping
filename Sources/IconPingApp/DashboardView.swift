@@ -10,12 +10,19 @@ struct DashboardView: View {
         VStack(spacing: 16) {
             hero
             statsRow
-            chart
+            ZStack {
+                chart
+                if viewModel.quickTestState != .idle {
+                    QuickTestCard(viewModel: viewModel)
+                        .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                }
+            }
             footer
         }
         .padding(20)
         .frame(width: 620, height: 440, alignment: .topLeading)
         .background(.background)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.quickTestState)
     }
 
     // MARK: - Hero (big status)
@@ -59,6 +66,17 @@ struct DashboardView: View {
             Spacer()
 
             HStack(spacing: 8) {
+                Button {
+                    viewModel.startQuickTest()
+                } label: {
+                    Label("action.quicktest", systemImage: "speedometer")
+                }
+                .help("action.quicktest.help")
+                .disabled(viewModel.quickTestState != .idle && {
+                    if case .finished = viewModel.quickTestState { return false }
+                    return true
+                }())
+
                 Button {
                     viewModel.togglePause()
                 } label: {
@@ -270,6 +288,127 @@ struct DashboardView: View {
 }
 
 // MARK: - Subviews
+
+struct QuickTestCard: View {
+    @ObservedObject var viewModel: AppViewModel
+
+    var body: some View {
+        VStack(spacing: 14) {
+            switch viewModel.quickTestState {
+            case .idle:
+                EmptyView()
+            case .running(let progress):
+                HStack(spacing: 10) {
+                    ProgressView().controlSize(.small)
+                    Text(LocalizedStringKey("quicktest.running"))
+                        .font(.headline)
+                }
+                ProgressView(value: progress)
+                    .progressViewStyle(.linear)
+                    .frame(maxWidth: 260)
+                Text(String(format: "%.0f%%", progress * 100))
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            case .finished(let result):
+                resultsView(result)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(NSColor.windowBackgroundColor))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.18), radius: 14, x: 0, y: 4)
+        }
+    }
+
+    @ViewBuilder
+    private func resultsView(_ result: QuickTestResult) -> some View {
+        HStack(spacing: 12) {
+            verdictBadge(result.verdict)
+            VStack(alignment: .leading, spacing: 1) {
+                verdictTitle(result.verdict)
+                    .font(.title2.bold())
+                Text(String(format: NSLocalizedString("quicktest.summary",
+                                                     value: "%d / %d replies in %.1f s",
+                                                     comment: ""),
+                            result.received, result.sent, result.durationSeconds))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+
+        HStack(spacing: 18) {
+            quickStat("metric.avg",  ms(result.avgMs))
+            quickStat("metric.min",  ms(result.minMs))
+            quickStat("metric.max",  ms(result.maxMs))
+            quickStat("metric.loss", String(format: "%.1f%%", result.lossPercent))
+            quickStat("metric.jitter", ms(result.jitterMs))
+        }
+
+        HStack {
+            Button {
+                viewModel.startQuickTest()
+            } label: {
+                Label("quicktest.again", systemImage: "arrow.clockwise")
+            }
+            Spacer()
+            Button {
+                viewModel.dismissQuickTest()
+            } label: {
+                Text(LocalizedStringKey("quicktest.dismiss"))
+            }
+            .keyboardShortcut(.defaultAction)
+        }
+        .controlSize(.small)
+        .padding(.top, 6)
+    }
+
+    @ViewBuilder
+    private func verdictTitle(_ v: QuickTestResult.Verdict) -> some View {
+        switch v {
+        case .excellent: Text("quicktest.excellent")
+        case .good:      Text("quicktest.good")
+        case .fair:      Text("quicktest.fair")
+        case .poor:      Text("quicktest.poor")
+        case .broken:    Text("quicktest.broken")
+        }
+    }
+
+    private func verdictBadge(_ v: QuickTestResult.Verdict) -> some View {
+        let (icon, tint) = verdictStyle(v)
+        return ZStack {
+            Circle().fill(tint.opacity(0.18)).frame(width: 44, height: 44)
+            Image(systemName: icon).font(.system(size: 22, weight: .semibold)).foregroundStyle(tint)
+        }
+    }
+
+    private func verdictStyle(_ v: QuickTestResult.Verdict) -> (String, Color) {
+        switch v {
+        case .excellent: return ("checkmark.seal.fill", .green)
+        case .good:      return ("checkmark.circle.fill", .green)
+        case .fair:      return ("equal.circle.fill", .orange)
+        case .poor:      return ("exclamationmark.triangle.fill", .red)
+        case .broken:    return ("xmark.octagon.fill", .red)
+        }
+    }
+
+    private func quickStat(_ labelKey: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(LocalizedStringKey(labelKey))
+                .font(.caption2).foregroundStyle(.secondary)
+            Text(value)
+                .font(.callout.monospacedDigit().weight(.medium))
+        }
+    }
+
+    private func ms(_ v: Double?) -> String { v.map { String(format: "%.0f ms", $0) } ?? "—" }
+}
 
 struct HeroBadge: View {
     let state: ConnectivityState

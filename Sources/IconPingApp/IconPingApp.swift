@@ -21,6 +21,10 @@ struct IconPingApp {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var viewModel: AppViewModel?
     var menuBarController: MenuBarController?
+    /// True iff we (not the user) paused the engine because the system went to
+    /// sleep. Used to avoid silently resuming a session the user had manually
+    /// paused before sleep.
+    private var systemPausedOnSleep = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // CRITICAL: instantiate Preferences.shared *before* reading anything,
@@ -102,6 +106,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+
+        // Optional auto-trigger of the Quick Test (for screenshot verification).
+        if let trig = env["ICONPING_AUTO_QUICKTEST_MS"].flatMap(Int.init) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(trig)) { [weak self] in
+                self?.viewModel?.startQuickTest()
+            }
+        }
+        if let shotAt = env["ICONPING_SHOT_AT_MS"].flatMap(Int.init), let dir = shotDir {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(shotAt)) {
+                Self.renderWindow(WindowManager.shared.dashboardWindow_internal,
+                                  to: "\(dir)/dashboard-shot-\(shotAt)ms.png")
+            }
+        }
         if env["ICONPING_AUTO_SETTINGS"] == "1" {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
                 guard let vm = self?.viewModel else { return }
@@ -148,13 +165,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func didSleep() {
         guard let vm = viewModel else { return }
-        if !vm.paused { vm.togglePause() }
+        if vm.paused {
+            // User had already paused — leave it alone, remember that.
+            systemPausedOnSleep = false
+        } else {
+            vm.togglePause()
+            systemPausedOnSleep = true
+        }
     }
 
     @objc private func didWake() {
         guard let vm = viewModel else { return }
-        if vm.paused { vm.togglePause() }
-        vm.resetStats()
+        // Only auto-resume if WE paused on sleep. If the user paused manually,
+        // they expect to still be paused on wake.
+        if systemPausedOnSleep && vm.paused {
+            vm.togglePause()
+            vm.resetStats()
+        }
+        systemPausedOnSleep = false
     }
 
     // MARK: - Live preference changes

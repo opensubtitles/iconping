@@ -160,6 +160,45 @@ public struct Preset: Sendable, Equatable {
     public static let all: [Preset] = [.default, .satellite, .lan]
 }
 
+public struct QuickTestResult: Sendable, Equatable {
+    public let sent: Int
+    public let received: Int
+    public let minMs: Double?
+    public let avgMs: Double?
+    public let maxMs: Double?
+    public let jitterMs: Double?
+    public let durationSeconds: Double
+
+    public init(sent: Int, received: Int, minMs: Double?, avgMs: Double?, maxMs: Double?, jitterMs: Double?, durationSeconds: Double) {
+        self.sent = sent
+        self.received = received
+        self.minMs = minMs
+        self.avgMs = avgMs
+        self.maxMs = maxMs
+        self.jitterMs = jitterMs
+        self.durationSeconds = durationSeconds
+    }
+
+    public var lossPercent: Double {
+        guard sent > 0 else { return 0 }
+        return Double(sent - received) / Double(sent) * 100.0
+    }
+
+    public enum Verdict: String, Sendable {
+        case excellent, good, fair, poor, broken
+    }
+
+    public var verdict: Verdict {
+        if received == 0 { return .broken }
+        if lossPercent >= 10 { return .poor }
+        guard let avg = avgMs else { return .poor }
+        if lossPercent == 0 && avg < 50  && (jitterMs ?? 0) < 10  { return .excellent }
+        if lossPercent < 2  && avg < 150 && (jitterMs ?? 0) < 50  { return .good }
+        if lossPercent < 5  && avg < 300                           { return .fair }
+        return .poor
+    }
+}
+
 public struct StateTransition: Sendable, Identifiable {
     public let id: UUID
     public let at: Date

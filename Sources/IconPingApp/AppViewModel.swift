@@ -17,6 +17,15 @@ final class AppViewModel: ObservableObject {
     @Published var paused: Bool = false
     @Published var lastErrorStatus: SampleStatus? = nil
 
+    enum QuickTestState: Equatable {
+        case idle
+        case running(progress: Double)   // 0..1
+        case finished(QuickTestResult)
+    }
+    @Published var quickTestState: QuickTestState = .idle
+    private var testSamples: [Sample] = []
+    private var testTask: Task<Void, Never>?
+
     // Settings-bound config
     @Published var engineConfig: EngineConfig
     @Published var thresholds: ThresholdConfig
@@ -80,6 +89,10 @@ final class AppViewModel: ObservableObject {
     }
 
     private func handle(_ sample: Sample) async {
+        // During a quick test, collect into the test bucket in parallel with normal stats.
+        if case .running = quickTestState {
+            await MainActor.run { self.testSamples.append(sample) }
+        }
         let prev = state
         let result = stateMachine.ingest(sample: sample)
 
@@ -126,6 +139,65 @@ final class AppViewModel: ObservableObject {
         recentSamples.removeAll()
         snapshot = stats.snapshot()
         transitions.removeAll()
+    }
+
+    func startQuickTest(count: Int = 30, intervalMs: Int = 200) {
+        guard testTask == nil else { return }
+        testTask = Task { [weak self] in
+            await self?.runQuickTest(count: count, intervalMs: intervalMs)
+            self?.testTask = nil
+        }
+    }
+
+    func dismissQuickTest() {
+        quickTestState = .idle
+    }
+
+    private func runQuickTest(count: Int, intervalMs: Int) async {
+        await MainActor.run {
+            self.testSamples.removeAll()
+            self.quickTestState = .running(progress: 0)
+        }
+
+        let savedCfg = engineConfig
+        var burstCfg = savedCfg
+        burstCfg.intervalSeconds = Double(intervalMs) / 1000.0
+        burstCfg.timeoutSeconds  = max(1.0, savedCfg.timeoutSeconds)
+        await engine.updateConfig(burstCfg)
+
+        let start = Date()
+        let maxSec = Double(count) * Double(intervalMs) / 1000.0 + savedCfg.timeoutSeconds + 1.0
+        while Date().timeIntervalSince(start) < maxSec {
+            let got = await MainActor.run { self.testSamples.count }
+            if got >= count { break }
+            await MainActor.run {
+                self.quickTestState = .running(progress: min(1.0, Double(got) / Double(count)))
+            }
+            try? await Task.sleep(nanoseconds: 150_000_000)
+        }
+
+        await engine.updateConfig(savedCfg)
+
+        await MainActor.run {
+            let samples = Array(self.testSamples.prefix(count))
+            let rttsMs = samples.compactMap { $0.rttMs }
+            var jitter: Double? = nil
+            if rttsMs.count >= 2 {
+                var diffs: [Double] = []
+                for i in 1..<rttsMs.count { diffs.append(abs(rttsMs[i] - rttsMs[i-1])) }
+                jitter = diffs.reduce(0, +) / Double(diffs.count)
+            }
+            let result = QuickTestResult(
+                sent: samples.count,
+                received: rttsMs.count,
+                minMs: rttsMs.min(),
+                avgMs: rttsMs.isEmpty ? nil : rttsMs.reduce(0, +) / Double(rttsMs.count),
+                maxMs: rttsMs.max(),
+                jitterMs: jitter,
+                durationSeconds: Date().timeIntervalSince(start)
+            )
+            self.quickTestState = .finished(result)
+        }
     }
 
     func togglePause() {

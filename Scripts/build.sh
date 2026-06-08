@@ -84,6 +84,12 @@ cp "$BUILD_DIR/IconPing.icns" "$RESOURCES_DIR/IconPing.icns"
 echo "▸ Copying Info.plist..."
 cp "$ROOT/Scripts/Info.plist" "$CONTENTS/Info.plist"
 
+# Stamp git short hash into CFBundleVersion so About / dashboard footer always
+# identify the exact build. Falls back to "1" if git history is unavailable.
+SHORT_SHA=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo "1")
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${SHORT_SHA}" "$CONTENTS/Info.plist" 2>/dev/null || true
+echo "  CFBundleVersion: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$CONTENTS/Info.plist")"
+
 echo "▸ Copying localized resources..."
 for lang in en it es sk fr; do
     src="$ROOT/Sources/IconPingApp/Resources/${lang}.lproj"

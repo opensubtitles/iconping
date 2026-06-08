@@ -84,6 +84,19 @@
 "field.target.invalid" = "Nombre de host o IP no válido.";
 "action.resetAll" = "Restablecer todos los ajustes";
 
+/* Quick test */
+"action.quicktest" = "Prueba rápida";
+"action.quicktest.help" = "Ejecuta una ráfaga de 30 pings para medir la conexión ahora.";
+"quicktest.running" = "Ejecutando prueba rápida…";
+"quicktest.again" = "Repetir prueba";
+"quicktest.dismiss" = "Hecho";
+"quicktest.summary" = "%d / %d respuestas en %.1f s";
+"quicktest.excellent" = "Conexión excelente";
+"quicktest.good" = "Conexión buena";
+"quicktest.fair" = "Conexión aceptable";
+"quicktest.poor" = "Conexión deficiente";
+"quicktest.broken" = "Conexión fallida";
+
 "language.system" = "Predeterminado del sistema";
 "language.fallback" = "Si tu idioma del sistema no está en la lista, se usa inglés.";
 "language.note" = "Requiere reiniciar la aplicación.";
