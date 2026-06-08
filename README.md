@@ -48,7 +48,13 @@ The motivating environment is an unreliable, high-latency, intermittently-droppi
 
 ```bash
 brew tap opensubtitles/iconping
+brew trust opensubtitles/iconping   # required once for third-party taps
 brew install --cask iconping
+```
+
+Updates later with:
+```bash
+brew update && brew upgrade --cask iconping
 ```
 
 ### Download the DMG
