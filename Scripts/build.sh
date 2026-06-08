@@ -36,31 +36,46 @@ rm -rf "$APP_DIR" "$BUILD_DIR/IconPing.dmg"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 
 echo "▸ Building Swift Package ($CONFIGURATION)..."
-# Universal build (arm64 + x86_64) requires full Xcode (xcbuild). On a CLT-only
-# system we fall back to a host-native build.
-UNIVERSAL_ARGS=(--arch arm64 --arch x86_64)
+# Universal build strategy: build per arch separately then lipo, because
+# SwiftPM's `--arch arm64 --arch x86_64` mode delegates to xcbuild and can
+# silently produce a single-arch binary at the show-bin-path location.
+# Doing it ourselves is verifiable and the same on CI and locally with Xcode.
+HAS_XCODE=0
 if [ -d "/Applications/Xcode.app" ] || [ -x "/Library/Developer/SharedFrameworks/XCBuild.framework/Versions/A/Support/xcbuild" ]; then
-    echo "  attempting universal build (arm64 + x86_64)..."
-    if ! swift build -c "$CONFIGURATION" "${UNIVERSAL_ARGS[@]}"; then
-        echo "  universal build failed — falling back to host-native"
-        UNIVERSAL_ARGS=()
-        swift build -c "$CONFIGURATION"
-    fi
+    HAS_XCODE=1
+fi
+
+if [ "$HAS_XCODE" = "1" ]; then
+    echo "  building arm64..."
+    swift build -c "$CONFIGURATION" --arch arm64
+    BIN_ARM64="$(swift build -c "$CONFIGURATION" --arch arm64 --show-bin-path)/IconPing"
+
+    echo "  building x86_64..."
+    swift build -c "$CONFIGURATION" --arch x86_64
+    BIN_X86="$(swift build -c "$CONFIGURATION" --arch x86_64 --show-bin-path)/IconPing"
+
+    echo "  lipo → universal binary..."
+    UNIVERSAL_BIN="$BUILD_DIR/IconPing.universal"
+    lipo -create -output "$UNIVERSAL_BIN" "$BIN_ARM64" "$BIN_X86"
+
+    ARCHS="$(lipo -archs "$UNIVERSAL_BIN")"
+    echo "  archs: $ARCHS"
+    case "$ARCHS" in
+        *arm64*x86_64*|*x86_64*arm64*) : ;;
+        *) echo "❌ universal binary missing expected archs (got: $ARCHS)"; exit 1 ;;
+    esac
+
+    cp "$UNIVERSAL_BIN" "$MACOS_DIR/IconPing"
+    BIN_PATH="$(swift build -c "$CONFIGURATION" --arch arm64 --show-bin-path)"  # for resource bundles
 else
-    echo "  CLT-only environment detected — building host-native (CI will build universal)"
-    UNIVERSAL_ARGS=()
+    echo "  CLT-only environment detected — building host-native (use CI for universal)"
     swift build -c "$CONFIGURATION"
-fi
-
-if [ ${#UNIVERSAL_ARGS[@]} -gt 0 ]; then
-    BIN_PATH="$(swift build -c "$CONFIGURATION" "${UNIVERSAL_ARGS[@]}" --show-bin-path)"
-else
     BIN_PATH="$(swift build -c "$CONFIGURATION" --show-bin-path)"
+    cp "$BIN_PATH/IconPing" "$MACOS_DIR/IconPing"
 fi
-echo "  bin path: $BIN_PATH"
-
-cp "$BIN_PATH/IconPing" "$MACOS_DIR/IconPing"
 chmod +x "$MACOS_DIR/IconPing"
+
+echo "  binary archs: $(lipo -archs "$MACOS_DIR/IconPing" 2>/dev/null || file -b "$MACOS_DIR/IconPing")"
 
 echo "▸ Generating procedural app icon..."
 bash "$ROOT/Scripts/make-icon.sh"
