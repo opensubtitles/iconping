@@ -121,12 +121,55 @@ echo "▸ Build complete: $APP_DIR"
 if [ "$MAKE_DMG" = "1" ]; then
     echo "▸ Building DMG..."
     DMG="$BUILD_DIR/IconPing.dmg"
+    RW_DMG="$BUILD_DIR/IconPing.rw.dmg"
     STAGING="$BUILD_DIR/dmg-staging"
-    rm -rf "$STAGING"
+    rm -rf "$STAGING" "$DMG" "$RW_DMG"
     mkdir -p "$STAGING"
     cp -R "$APP_DIR" "$STAGING/"
     ln -s /Applications "$STAGING/Applications"
-    hdiutil create -volname "IconPing" -srcfolder "$STAGING" -ov -format UDZO "$DMG"
+
+    # Create a writable DMG sized to fit + headroom for .DS_Store
+    SIZE_MB=$(( $(du -smc "$STAGING" | tail -1 | awk '{print $1}') + 20 ))
+    hdiutil create -volname "IconPing" -srcfolder "$STAGING" -ov \
+        -format UDRW -size ${SIZE_MB}m -fs HFS+ "$RW_DMG" >/dev/null
+
+    # Mount writable and apply a Finder layout (icon view, positioned icons).
+    MOUNT_OUT=$(hdiutil attach -nobrowse -readwrite -noverify "$RW_DMG")
+    MOUNT_POINT=$(echo "$MOUNT_OUT" | grep "/Volumes/IconPing" | awk '{for(i=3;i<=NF;i++)printf "%s%s",$i,(i<NF?" ":"")}')
+    echo "  mounted RW at: $MOUNT_POINT"
+
+    # Apply Finder layout via AppleScript. Skipped silently if Finder scripting
+    # isn't reachable (e.g. some CI environments) — the DMG still works without it.
+    osascript <<APPLESCRIPT 2>/dev/null || echo "  (Finder layout skipped — Finder not scriptable in this environment)"
+tell application "Finder"
+    tell disk "IconPing"
+        open
+        set current view of container window to icon view
+        set toolbar visible of container window to false
+        set statusbar visible of container window to false
+        set the bounds of container window to {200, 200, 740, 520}
+        set viewOptions to the icon view options of container window
+        set arrangement of viewOptions to not arranged
+        set icon size of viewOptions to 110
+        try
+            set position of item "IconPing.app" of container window to {140, 160}
+        end try
+        try
+            set position of item "Applications" of container window to {400, 160}
+        end try
+        update without registering applications
+        delay 1
+        close
+    end tell
+end tell
+APPLESCRIPT
+
+    sync
+    hdiutil detach "$MOUNT_POINT" -quiet || hdiutil detach "$MOUNT_POINT" -force
+
+    # Convert RW → compressed read-only UDZO
+    hdiutil convert "$RW_DMG" -format UDZO -imagekey zlib-level=9 -o "$DMG" >/dev/null
+    rm -f "$RW_DMG"
     rm -rf "$STAGING"
     echo "  DMG: $DMG"
 fi
