@@ -17,7 +17,7 @@ final class ICMPPacketTests: XCTestCase {
     }
 
     func testEncodeDecodeRoundTripV4() {
-        let pkt = ICMPPacket.encodeEchoRequest(family: .v4, identifier: 0x1234, sequence: 0x5678, payloadBytes: 32)
+        let pkt = ICMPPacket.encodeEchoRequest(family: .v4, identifier: 0x1234, sequence: 0x5678, sessionID: 0xCAFEBABE, payloadBytes: 32)
         XCTAssertEqual(pkt.count, 8 + 32)
         // Type 8 echo request
         XCTAssertEqual(pkt[0], 8)
@@ -34,7 +34,7 @@ final class ICMPPacketTests: XCTestCase {
     }
 
     func testEncodeDecodeRoundTripV6() {
-        let pkt = ICMPPacket.encodeEchoRequest(family: .v6, identifier: 0, sequence: 7, payloadBytes: 16)
+        let pkt = ICMPPacket.encodeEchoRequest(family: .v6, identifier: 0, sequence: 7, sessionID: 0xCAFEBABE, payloadBytes: 16)
         XCTAssertEqual(pkt[0], 128) // ICMPv6 echo request type
         guard let decoded = ICMPPacket.decodeReply(family: .v6, data: pkt) else {
             return XCTFail("decode failed")

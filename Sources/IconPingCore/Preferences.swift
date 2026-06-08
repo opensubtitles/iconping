@@ -77,7 +77,7 @@ public final class Preferences: @unchecked Sendable {
     public var engineConfig: EngineConfig {
         get {
             EngineConfig(
-                targetHost:      defaults.string(forKey: Key.targetHost.rawValue) ?? "1.1.1.1",
+                targetHost:      Preferences.sanitizeTargetHost(defaults.string(forKey: Key.targetHost.rawValue)),
                 ipPreference:    IPVersionPreference(rawValue: defaults.string(forKey: Key.ipPreference.rawValue) ?? "auto") ?? .auto,
                 intervalSeconds: Double(defaults.integer(forKey: Key.intervalMs.rawValue)) / 1000.0,
                 timeoutSeconds:  Double(defaults.integer(forKey: Key.timeoutMs.rawValue)) / 1000.0,
@@ -85,12 +85,25 @@ public final class Preferences: @unchecked Sendable {
             )
         }
         set {
-            defaults.set(newValue.targetHost,                   forKey: Key.targetHost.rawValue)
+            defaults.set(Preferences.sanitizeTargetHost(newValue.targetHost), forKey: Key.targetHost.rawValue)
             defaults.set(newValue.ipPreference.rawValue,        forKey: Key.ipPreference.rawValue)
             defaults.set(Int(newValue.intervalSeconds * 1000),  forKey: Key.intervalMs.rawValue)
             defaults.set(Int(newValue.timeoutSeconds  * 1000),  forKey: Key.timeoutMs.rawValue)
             defaults.set(newValue.payloadBytes,                 forKey: Key.payloadBytes.rawValue)
         }
+    }
+
+    /// Trim whitespace and reject characters that can't appear in a hostname or
+    /// IP literal. If the result is empty or invalid, fall back to 1.1.1.1.
+    public static func sanitizeTargetHost(_ raw: String?) -> String {
+        guard let raw else { return "1.1.1.1" }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Allow letters, digits, dot, hyphen, colon (IPv6) — reject internal spaces or anything else.
+        let allowed: Set<Character> = Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-:")
+        if trimmed.isEmpty || trimmed.contains(where: { !allowed.contains($0) }) {
+            return "1.1.1.1"
+        }
+        return trimmed
     }
 
     public var thresholds: ThresholdConfig {

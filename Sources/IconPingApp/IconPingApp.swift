@@ -31,6 +31,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Activation policy reflects "Show in Dock" preference.
         NSApp.setActivationPolicy(showDock ? .regular : .accessory)
 
+        // Standard macOS application menu bar (App / File / View / Window / Help)
+        setupMainMenu()
+
         let vm = AppViewModel()
         self.viewModel = vm
 
@@ -162,6 +165,173 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let showMenu = UserDefaults.standard.bool(forKey: Preferences.Key.showMenuBar.rawValue)
         guard !showDock && !showMenu, let vm = viewModel else { return }
         WindowManager.shared.openDashboard(viewModel: vm)
+    }
+
+    // MARK: - Mac menu bar (top-of-screen menus)
+
+    private func setupMainMenu() {
+        let mainMenu = NSMenu()
+
+        // ─── App menu ───
+        let appMenuItem = NSMenuItem()
+        mainMenu.addItem(appMenuItem)
+        let appMenu = NSMenu()
+        appMenuItem.submenu = appMenu
+
+        let aboutItem = NSMenuItem(
+            title: String(format: NSLocalizedString("menu.about", value: "About %@", comment: ""), "IconPing"),
+            action: #selector(menuShowAbout), keyEquivalent: ""
+        )
+        aboutItem.target = self
+        appMenu.addItem(aboutItem)
+
+        appMenu.addItem(.separator())
+
+        let prefItem = NSMenuItem(
+            title: NSLocalizedString("menu.preferences", value: "Settings…", comment: ""),
+            action: #selector(menuShowSettings), keyEquivalent: ","
+        )
+        prefItem.target = self
+        appMenu.addItem(prefItem)
+
+        appMenu.addItem(.separator())
+
+        let hideItem = NSMenuItem(
+            title: String(format: NSLocalizedString("menu.hide", value: "Hide %@", comment: ""), "IconPing"),
+            action: #selector(NSApplication.hide(_:)), keyEquivalent: "h"
+        )
+        appMenu.addItem(hideItem)
+
+        let hideOthers = NSMenuItem(
+            title: NSLocalizedString("menu.hideOthers", value: "Hide Others", comment: ""),
+            action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: "h"
+        )
+        hideOthers.keyEquivalentModifierMask = [.command, .option]
+        appMenu.addItem(hideOthers)
+
+        appMenu.addItem(NSMenuItem(
+            title: NSLocalizedString("menu.showAll", value: "Show All", comment: ""),
+            action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: ""
+        ))
+
+        appMenu.addItem(.separator())
+
+        appMenu.addItem(NSMenuItem(
+            title: NSLocalizedString("menu.quit", value: "Quit IconPing", comment: ""),
+            action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"
+        ))
+
+        // ─── File menu ───
+        let fileMenuItem = NSMenuItem()
+        mainMenu.addItem(fileMenuItem)
+        let fileMenu = NSMenu(title: NSLocalizedString("menu.file", value: "File", comment: ""))
+        fileMenuItem.submenu = fileMenu
+        fileMenu.addItem(NSMenuItem(
+            title: NSLocalizedString("menu.close", value: "Close Window", comment: ""),
+            action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w"
+        ))
+
+        // ─── View menu ───
+        let viewMenuItem = NSMenuItem()
+        mainMenu.addItem(viewMenuItem)
+        let viewMenu = NSMenu(title: NSLocalizedString("menu.view", value: "View", comment: ""))
+        viewMenuItem.submenu = viewMenu
+
+        let dashItem = NSMenuItem(
+            title: NSLocalizedString("menu.dashboard", value: "Open Dashboard", comment: ""),
+            action: #selector(menuShowDashboard), keyEquivalent: "d"
+        )
+        dashItem.target = self
+        viewMenu.addItem(dashItem)
+
+        let pauseItem = NSMenuItem(
+            title: NSLocalizedString("menu.pauseResume", value: "Pause / Resume", comment: ""),
+            action: #selector(menuTogglePause), keyEquivalent: "p"
+        )
+        pauseItem.target = self
+        viewMenu.addItem(pauseItem)
+
+        let resetItem = NSMenuItem(
+            title: NSLocalizedString("action.reset", value: "Reset stats", comment: ""),
+            action: #selector(menuResetStats), keyEquivalent: "r"
+        )
+        resetItem.target = self
+        viewMenu.addItem(resetItem)
+
+        // ─── Window menu (standard) ───
+        let windowMenuItem = NSMenuItem()
+        mainMenu.addItem(windowMenuItem)
+        let windowMenu = NSMenu(title: NSLocalizedString("menu.window", value: "Window", comment: ""))
+        windowMenuItem.submenu = windowMenu
+        windowMenu.addItem(NSMenuItem(
+            title: NSLocalizedString("menu.minimize", value: "Minimize", comment: ""),
+            action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m"
+        ))
+        windowMenu.addItem(NSMenuItem(
+            title: NSLocalizedString("menu.zoom", value: "Zoom", comment: ""),
+            action: #selector(NSWindow.performZoom(_:)), keyEquivalent: ""
+        ))
+        NSApp.windowsMenu = windowMenu
+
+        // ─── Help menu ───
+        let helpMenuItem = NSMenuItem()
+        mainMenu.addItem(helpMenuItem)
+        let helpMenu = NSMenu(title: NSLocalizedString("menu.help", value: "Help", comment: ""))
+        helpMenuItem.submenu = helpMenu
+        let githubItem = NSMenuItem(
+            title: NSLocalizedString("menu.openGitHub", value: "IconPing on GitHub", comment: ""),
+            action: #selector(menuOpenGitHub), keyEquivalent: ""
+        )
+        githubItem.target = self
+        helpMenu.addItem(githubItem)
+        NSApp.helpMenu = helpMenu
+
+        NSApp.mainMenu = mainMenu
+    }
+
+    @objc private func menuShowDashboard() {
+        guard let vm = viewModel else { return }
+        WindowManager.shared.openDashboard(viewModel: vm)
+    }
+
+    @objc private func menuShowSettings() {
+        guard let vm = viewModel else { return }
+        WindowManager.shared.openSettings(viewModel: vm)
+    }
+
+    @objc private func menuShowAbout() {
+        let info = Bundle.main.infoDictionary
+        let version = (info?["CFBundleShortVersionString"] as? String) ?? "1.0.0"
+        let build = (info?["CFBundleVersion"] as? String) ?? "1"
+        let credits = NSAttributedString(
+            string: NSLocalizedString("about.credit",
+                value: "Inspired by antirez's original iconping. MIT license.",
+                comment: ""
+            ),
+            attributes: [.font: NSFont.systemFont(ofSize: 11),
+                         .foregroundColor: NSColor.secondaryLabelColor]
+        )
+        NSApp.orderFrontStandardAboutPanel(options: [
+            .applicationName: "IconPing",
+            .applicationVersion: version,
+            .version: "(\(build))",
+            .credits: credits
+        ])
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc private func menuTogglePause() {
+        viewModel?.togglePause()
+    }
+
+    @objc private func menuResetStats() {
+        viewModel?.resetStats()
+    }
+
+    @objc private func menuOpenGitHub() {
+        if let url = URL(string: "https://github.com/opensubtitles/iconping") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     // MARK: - Debug screenshot helper

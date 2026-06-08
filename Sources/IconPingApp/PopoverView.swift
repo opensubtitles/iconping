@@ -109,9 +109,14 @@ struct MetricView: View {
             Text(LocalizedStringKey(labelKey))
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+            // Fixed width keeps the three metric columns from shifting as the
+            // value changes from "—" to "42 ms" to "120 ms" etc.
             Text(value)
                 .font(.system(.body, design: .rounded).weight(.medium))
                 .monospacedDigit()
+                .lineLimit(1)
+                .frame(minWidth: 70, alignment: .leading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

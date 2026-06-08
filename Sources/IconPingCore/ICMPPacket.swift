@@ -19,14 +19,23 @@ public enum ICMPPacket {
 
     public static let headerSize = 8
     public static let signature: [UInt8] = Array("ICONPING".utf8)
+    /// Payload layout (so we can correlate replies even if the kernel rewrites
+    /// the ICMP-header sequence field, which has been observed on recent macOS):
+    ///   [0..<8]:   "ICONPING" magic
+    ///   [8..<12]:  session ID (UInt32 BE)        — unique per PingEngine instance
+    ///   [12..<14]: app sequence (UInt16 BE)      — what we actually correlate on
+    ///   [14...]:   padding
+    public static let payloadHeaderSize = 14
 
     /// Build an echo-request packet. Identifier is ignored by the datagram kernel but
-    /// included for completeness. Payload starts with the signature followed by random
-    /// padding up to `payloadBytes`.
+    /// included for completeness. Payload starts with the signature + session ID +
+    /// app sequence so we can correlate replies via the echoed-back payload instead
+    /// of the ICMP header sequence (which some kernels rewrite).
     public static func encodeEchoRequest(
         family: Family,
         identifier: UInt16,
         sequence: UInt16,
+        sessionID: UInt32,
         payloadBytes: Int
     ) -> Data {
         let type: UInt8 = (family == .v4) ? echoRequestV4 : echoRequestV6
@@ -41,14 +50,18 @@ public enum ICMPPacket {
         data.appendBigEndian(sequence)
 
         // payload
-        let sig = signature
-        let toWrite = max(0, payloadBytes)
-        for i in 0..<toWrite {
-            if i < sig.count {
-                data.append(sig[i])
-            } else {
-                data.append(UInt8(truncatingIfNeeded: i))
-            }
+        let toWrite = max(payloadBytes, payloadHeaderSize)
+        // [0..<8] signature
+        data.append(contentsOf: signature)
+        // [8..<12] sessionID BE
+        let sidBE = sessionID.bigEndian
+        withUnsafeBytes(of: sidBE) { data.append(contentsOf: $0) }
+        // [12..<14] app sequence BE
+        let seqBE = sequence.bigEndian
+        withUnsafeBytes(of: seqBE) { data.append(contentsOf: $0) }
+        // remaining padding
+        for i in payloadHeaderSize..<toWrite {
+            data.append(UInt8(truncatingIfNeeded: i))
         }
 
         // For IPv4 we set the checksum field defensively (kernel will overwrite, but
@@ -69,6 +82,25 @@ public enum ICMPPacket {
         public let identifier: UInt16
         public let sequence: UInt16
         public let payload: Data
+    }
+
+    /// Pull the session ID and our app-sequence out of a reply's payload. Returns
+    /// nil if the payload is too short or doesn't carry our magic — i.e. the
+    /// packet didn't originate from this app.
+    public static func parsePayload(_ payload: Data) -> (sessionID: UInt32, appSeq: UInt16)? {
+        guard payload.count >= payloadHeaderSize else { return nil }
+        let sigBytes = Array(payload.prefix(signature.count))
+        guard sigBytes == signature else { return nil }
+        let start = payload.startIndex
+        let sid: UInt32 =
+            (UInt32(payload[start + 8])  << 24) |
+            (UInt32(payload[start + 9])  << 16) |
+            (UInt32(payload[start + 10]) << 8)  |
+             UInt32(payload[start + 11])
+        let seq: UInt16 =
+            (UInt16(payload[start + 12]) << 8) |
+             UInt16(payload[start + 13])
+        return (sid, seq)
     }
 
     /// Decode an echo reply. For IPv4 datagram sockets the kernel typically strips

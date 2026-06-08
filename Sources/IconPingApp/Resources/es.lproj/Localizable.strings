@@ -77,6 +77,10 @@
 "ui.openDashboardOnLaunch" = "Abrir el panel al iniciar";
 "ui.visibilityHint" = "Si ocultas ambos, el panel se abrirá automáticamente para que no pierdas acceso a la app.";
 "settings.visibility" = "Dónde mostrar IconPing";
+"error.dns" = "No se puede resolver el host '%@'";
+"error.socket" = "Error del socket ICMP";
+"error.noRoute" = "Sin ruta al host";
+"error.timeout" = "Sin respuesta del destino";
 
 "language.system" = "Predeterminado del sistema";
 "language.fallback" = "Si tu idioma del sistema no está en la lista, se usa inglés.";

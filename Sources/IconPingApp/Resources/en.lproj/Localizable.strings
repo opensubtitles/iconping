@@ -90,6 +90,12 @@
 "ui.visibilityHint" = "If you hide both, the dashboard opens automatically so you can still reach the app.";
 "settings.visibility" = "Where to show IconPing";
 
+/* Error reasons shown on the dashboard hero */
+"error.dns" = "Can't resolve host '%@'";
+"error.socket" = "ICMP socket error";
+"error.noRoute" = "No route to host";
+"error.timeout" = "No reply from target";
+
 /* Language */
 "language.system" = "System default";
 "language.fallback" = "If your system language isn't listed, English is used.";

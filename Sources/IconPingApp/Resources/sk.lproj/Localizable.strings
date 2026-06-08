@@ -77,6 +77,10 @@
 "ui.openDashboardOnLaunch" = "Otvoriť prehľad pri spustení";
 "ui.visibilityHint" = "Ak skryjete oboje, prehľad sa otvorí automaticky, aby ste sa k aplikácii vždy dostali.";
 "settings.visibility" = "Kde zobraziť IconPing";
+"error.dns" = "Nedá sa preložiť hostiteľ '%@'";
+"error.socket" = "Chyba ICMP soketu";
+"error.noRoute" = "Žiadna cesta k hostiteľovi";
+"error.timeout" = "Žiadna odpoveď z cieľa";
 
 "language.system" = "Systémový jazyk";
 "language.fallback" = "Ak váš systémový jazyk nie je v zozname, použije sa angličtina.";

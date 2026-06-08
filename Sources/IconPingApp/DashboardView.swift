@@ -44,6 +44,16 @@ struct DashboardView: View {
                 }
                 .font(.callout)
                 .foregroundStyle(.secondary)
+
+                if let reason = errorReason {
+                    HStack(spacing: 5) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text(reason)
+                            .foregroundStyle(.orange)
+                    }
+                    .font(.caption)
+                }
             }
 
             Spacer()
@@ -125,7 +135,7 @@ struct DashboardView: View {
         .background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
     }
 
-    // MARK: - Footer (network path + export)
+    // MARK: - Footer (network path + version + export)
 
     private var footer: some View {
         HStack(spacing: 10) {
@@ -144,6 +154,10 @@ struct DashboardView: View {
             } else {
                 Text("—").foregroundStyle(.tertiary)
             }
+            Text("·").foregroundStyle(.tertiary)
+            Text("v\(versionString)")
+                .foregroundStyle(.tertiary)
+                .monospacedDigit()
             Spacer()
             Button {
                 exportCSV()
@@ -155,11 +169,40 @@ struct DashboardView: View {
         .font(.caption)
     }
 
+    private var versionString: String {
+        let info = Bundle.main.infoDictionary
+        let short = (info?["CFBundleShortVersionString"] as? String) ?? "1.0.0"
+        let build = (info?["CFBundleVersion"] as? String) ?? "1"
+        return build == "1" ? short : "\(short) (\(build))"
+    }
+
     // MARK: - Helpers
 
     /// Only show the resolved IP when it actually adds information (i.e. the user
     /// typed a hostname). If the target is already an IP literal, the resolved
     /// address is identical and duplicating it is noise.
+    /// Human-readable failure reason shown in the hero when state is .down for
+    /// a known cause (DNS failure, socket error, etc.). Returns nil for normal
+    /// operation or generic packet loss.
+    private var errorReason: String? {
+        guard let s = viewModel.lastErrorStatus else { return nil }
+        switch s {
+        case .dnsFailure:
+            return String(
+                format: NSLocalizedString("error.dns", value: "Can't resolve host '%@'", comment: ""),
+                viewModel.engineConfig.targetHost
+            )
+        case .socketError:
+            return NSLocalizedString("error.socket", value: "ICMP socket error", comment: "")
+        case .noRoute:
+            return NSLocalizedString("error.noRoute", value: "No route to host", comment: "")
+        case .lost:
+            return NSLocalizedString("error.timeout", value: "No reply from target", comment: "")
+        case .received:
+            return nil
+        }
+    }
+
     private var showResolved: Bool {
         let resolved = viewModel.resolvedAddress
         let target = viewModel.engineConfig.targetHost

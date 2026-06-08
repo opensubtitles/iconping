@@ -143,11 +143,34 @@ final class MenuBarController: NSObject {
         // Menu is built on demand for right-click; left-click uses the popover.
         let menu = NSMenu()
         menu.autoenablesItems = false
+        menu.minimumWidth = 240  // prevents width-jumping as values arrive
 
         let statusName = NSLocalizedString(viewModel.state.localizationKey, comment: "")
         let header = NSMenuItem(title: statusName, action: nil, keyEquivalent: "")
         header.isEnabled = false
         menu.addItem(header)
+
+        // Live stat items — monospaced + right-aligned values so widths stay stable
+        // as numbers update. Pre-filled with "—" so opening the menu before the
+        // first sample doesn't show blanks.
+        let snap = viewModel.snapshot
+        menu.addItem(makeStatItem(
+            label: NSLocalizedString("metric.latency", comment: ""),
+            value: snap.rttLastMs.map { String(format: "%.0f ms", $0) } ?? "—"
+        ))
+        menu.addItem(makeStatItem(
+            label: NSLocalizedString("metric.loss", comment: ""),
+            value: String(format: "%.1f%%", snap.lossPercent)
+        ))
+        menu.addItem(makeStatItem(
+            label: NSLocalizedString("stats.sent", comment: ""),
+            value: "\(snap.sent)"
+        ))
+        menu.addItem(makeStatItem(
+            label: NSLocalizedString("stats.received", comment: ""),
+            value: "\(snap.received)"
+        ))
+
         menu.addItem(.separator())
 
         let dash = NSMenuItem(
@@ -228,6 +251,34 @@ final class MenuBarController: NSObject {
 
     @objc private func quitApp() {
         NSApp.terminate(nil)
+    }
+
+    /// Builds a non-actionable info item like "Latency        42 ms" with the
+    /// label left-aligned and the value right-aligned + monospaced.
+    private func makeStatItem(label: String, value: String) -> NSMenuItem {
+        let item = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        item.isEnabled = false
+
+        let para = NSMutableParagraphStyle()
+        para.tabStops = [NSTextTab(textAlignment: .right, location: 220)]
+        para.defaultTabInterval = 220
+
+        let attr = NSMutableAttributedString(
+            string: "\(label)\t\(value)",
+            attributes: [
+                .paragraphStyle: para,
+                .font: NSFont.menuFont(ofSize: 13)
+            ]
+        )
+        // Apply monospaced digits to the numeric portion for stable column width.
+        let valueRange = NSRange(location: (label as NSString).length + 1, length: (value as NSString).length)
+        attr.addAttribute(
+            .font,
+            value: NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular),
+            range: valueRange
+        )
+        item.attributedTitle = attr
+        return item
     }
 
     /// Tear down the status item — used when the user disables "Show menu bar icon".

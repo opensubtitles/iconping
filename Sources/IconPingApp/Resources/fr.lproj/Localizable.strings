@@ -77,6 +77,10 @@
 "ui.openDashboardOnLaunch" = "Ouvrir le tableau de bord au démarrage";
 "ui.visibilityHint" = "Si vous masquez les deux, le tableau de bord s'ouvre automatiquement pour rester accessible.";
 "settings.visibility" = "Où afficher IconPing";
+"error.dns" = "Impossible de résoudre l'hôte « %@ »";
+"error.socket" = "Erreur de socket ICMP";
+"error.noRoute" = "Pas de route vers l'hôte";
+"error.timeout" = "Aucune réponse de la cible";
 
 "language.system" = "Langue du système";
 "language.fallback" = "Si la langue de votre système n'est pas dans la liste, l'anglais est utilisé.";

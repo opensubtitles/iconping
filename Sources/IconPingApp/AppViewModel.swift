@@ -15,6 +15,7 @@ final class AppViewModel: ObservableObject {
     @Published var resolvedAddress: String = "-"
     @Published var ipVersionInUse: IPVersionPreference = .auto
     @Published var paused: Bool = false
+    @Published var lastErrorStatus: SampleStatus? = nil
 
     // Settings-bound config
     @Published var engineConfig: EngineConfig
@@ -91,6 +92,18 @@ final class AppViewModel: ObservableObject {
             self.state = result.state
             self.resolvedAddress = sample.resolvedAddress ?? self.resolvedAddress
             self.ipVersionInUse = sample.ipVersion
+
+            // Track persistent failure types so the UI can show a useful reason.
+            switch sample.status {
+            case .received:
+                self.lastErrorStatus = nil
+            case .lost:
+                // 'lost' alone is ambiguous (timeout, not a hard error) — only set
+                // it when the state machine actually crossed into .down.
+                if result.state == .down { self.lastErrorStatus = .lost }
+            case .dnsFailure, .socketError, .noRoute:
+                self.lastErrorStatus = sample.status
+            }
 
             if let t = result.transition {
                 self.transitions.insert(t, at: 0)
