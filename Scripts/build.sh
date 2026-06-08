@@ -126,23 +126,36 @@ if [ "$MAKE_DMG" = "1" ]; then
     rm -rf "$STAGING" "$DMG" "$RW_DMG"
     mkdir -p "$STAGING"
     cp -R "$APP_DIR" "$STAGING/"
-    ln -s /Applications "$STAGING/Applications"
+    # NOTE: deliberately NOT putting `ln -s /Applications` here. On macOS Tahoe
+    # (26.x), Finder no longer renders a bare symlink with the target's folder
+    # icon in dark mode — it shows up transparent/blank. Instead we create a
+    # real Mac alias inside the mounted DMG via AppleScript below, which
+    # carries its own icon resource and renders correctly on every macOS.
 
-    # Create a writable DMG sized to fit + headroom for .DS_Store
+    # Create a writable DMG sized to fit + headroom for alias file and .DS_Store
     SIZE_MB=$(( $(du -smc "$STAGING" | tail -1 | awk '{print $1}') + 20 ))
     hdiutil create -volname "IconPing" -srcfolder "$STAGING" -ov \
         -format UDRW -size ${SIZE_MB}m -fs HFS+ "$RW_DMG" >/dev/null
 
-    # Mount writable and apply a Finder layout (icon view, positioned icons).
+    # Mount writable and apply: (a) a real Mac alias to /Applications,
+    # (b) Finder layout (icon view, positioned icons).
     MOUNT_OUT=$(hdiutil attach -nobrowse -readwrite -noverify "$RW_DMG")
     MOUNT_POINT=$(echo "$MOUNT_OUT" | grep "/Volumes/IconPing" | awk '{for(i=3;i<=NF;i++)printf "%s%s",$i,(i<NF?" ":"")}')
     echo "  mounted RW at: $MOUNT_POINT"
 
-    # Apply Finder layout via AppleScript. Skipped silently if Finder scripting
-    # isn't reachable (e.g. some CI environments) — the DMG still works without it.
-    osascript <<APPLESCRIPT 2>/dev/null || echo "  (Finder layout skipped — Finder not scriptable in this environment)"
+    osascript <<APPLESCRIPT 2>&1 | sed 's/^/  applescript: /' || echo "  (AppleScript step failed — DMG will ship without layout)"
 tell application "Finder"
     tell disk "IconPing"
+        -- Create a real Mac alias to /Applications (icon resource embedded)
+        try
+            set appsFolder to POSIX file "/Applications" as alias
+            make new alias file at it to appsFolder
+            -- New alias is named "Applications alias"; rename to plain "Applications"
+            try
+                set name of file "Applications alias" to "Applications"
+            end try
+        end try
+
         open
         set current view of container window to icon view
         set toolbar visible of container window to false
@@ -163,6 +176,14 @@ tell application "Finder"
     end tell
 end tell
 APPLESCRIPT
+
+    # Some macOS versions still leave the original "Applications alias" name.
+    # Force-rename via the shell if so. Use null-delim find for safety.
+    if [ -e "$MOUNT_POINT/Applications alias" ] && [ ! -e "$MOUNT_POINT/Applications" ]; then
+        mv "$MOUNT_POINT/Applications alias" "$MOUNT_POINT/Applications"
+    fi
+    echo "  DMG contents:"
+    ls -la "$MOUNT_POINT" | grep -vE "^total|^\.\." | sed 's/^/    /'
 
     sync
     hdiutil detach "$MOUNT_POINT" -quiet || hdiutil detach "$MOUNT_POINT" -force
