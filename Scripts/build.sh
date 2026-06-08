@@ -178,10 +178,29 @@ end tell
 APPLESCRIPT
 
     # Some macOS versions still leave the original "Applications alias" name.
-    # Force-rename via the shell if so. Use null-delim find for safety.
+    # Force-rename via the shell if so.
     if [ -e "$MOUNT_POINT/Applications alias" ] && [ ! -e "$MOUNT_POINT/Applications" ]; then
         mv "$MOUNT_POINT/Applications alias" "$MOUNT_POINT/Applications"
     fi
+
+    # Stamp the /Applications folder icon directly onto our alias via NSWorkspace.
+    # This is needed because on macOS Tahoe (26.x) Finder doesn't render the alias
+    # bookmark's embedded icon resource in dark mode — using NSWorkspace.setIcon
+    # writes the icon to the file's custom-icon attribute, which Finder honors
+    # in every mode on every macOS version.
+    echo "  stamping Applications-folder icon onto alias..."
+    SET_ICON_SWIFT="$BUILD_DIR/_setIcon.swift"
+    cat > "$SET_ICON_SWIFT" <<'SWIFT'
+import Cocoa
+let target = CommandLine.arguments[1]
+let icon = NSWorkspace.shared.icon(forFile: "/Applications")
+let ok = NSWorkspace.shared.setIcon(icon, forFile: target, options: [])
+print("    setIcon(\(target)) -> \(ok ? "OK" : "FAILED")")
+exit(ok ? 0 : 1)
+SWIFT
+    swift "$SET_ICON_SWIFT" "$MOUNT_POINT/Applications" || echo "    (icon stamp failed — DMG ships anyway)"
+    rm -f "$SET_ICON_SWIFT"
+
     echo "  DMG contents:"
     ls -la "$MOUNT_POINT" | grep -vE "^total|^\.\." | sed 's/^/    /'
 
