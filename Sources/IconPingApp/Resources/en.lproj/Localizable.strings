@@ -111,6 +111,16 @@
 "speedtest.elapsed" = "Elapsed";
 "speedtest.download" = "Download";
 "speedtest.upload" = "Upload";
+
+/* Update check */
+"menu.checkForUpdates" = "Check for Updates…";
+"update.upToDate.title" = "You're up to date";
+"update.upToDate.body" = "IconPing %d.%d.%d is the latest version.";
+"update.available.title" = "IconPing %@ is available";
+"update.available.body" = "You're running %d.%d.%d. Open the Releases page to download.";
+"update.openReleases" = "Open Releases";
+"update.later" = "Later";
+"update.error.title" = "Update check failed";
 "speedtest.excellent" = "Excellent — ultra-fast";
 "speedtest.good" = "Good — plenty fast";
 "speedtest.fair" = "Fair — usable";

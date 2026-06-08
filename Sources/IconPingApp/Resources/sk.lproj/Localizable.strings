@@ -97,6 +97,16 @@
 "speedtest.elapsed" = "Čas";
 "speedtest.download" = "Sťahovanie";
 "speedtest.upload" = "Odosielanie";
+
+/* Update check */
+"menu.checkForUpdates" = "Skontrolovať aktualizácie…";
+"update.upToDate.title" = "Máte najnovšiu verziu";
+"update.upToDate.body" = "IconPing %d.%d.%d je najnovšia verzia.";
+"update.available.title" = "K dispozícii je IconPing %@";
+"update.available.body" = "Používate %d.%d.%d. Otvorte stránku Releases na stiahnutie.";
+"update.openReleases" = "Otvoriť Releases";
+"update.later" = "Neskôr";
+"update.error.title" = "Kontrola aktualizácií zlyhala";
 "speedtest.excellent" = "Výborná — veľmi rýchla";
 "speedtest.good" = "Dobrá — dosť rýchla";
 "speedtest.fair" = "Priemerná — použiteľná";

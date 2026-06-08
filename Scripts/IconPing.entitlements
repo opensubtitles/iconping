@@ -2,6 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <!--
+    App Sandbox is intentionally OFF: a sandboxed app's network.client
+    entitlement does NOT grant the right to receive on an unprivileged ICMP
+    datagram socket — recvfrom() returns EPERM (errno 1). Verified empirically.
+    Mac App Store distribution would therefore require either switching to an
+    HTTP-only connectivity probe or shipping a privileged helper tool; both are
+    deferred for v1.x. The Direct Distribution build retains all macOS process
+    protections (hardened runtime + library validation) without sandbox.
+    -->
     <key>com.apple.security.app-sandbox</key>
     <false/>
     <key>com.apple.security.network.client</key>

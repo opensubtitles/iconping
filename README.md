@@ -22,7 +22,34 @@ The motivating environment is an unreliable, high-latency, intermittently-droppi
 - macOS 13 Ventura → latest. Universal binary (arm64 + x86_64).
 - Open source, MIT.
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" alt="Dashboard" width="640"/>
+  <br/>
+  <em>Dashboard — hero status, four big stats, live chart.</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/speedtest.png" alt="Speed test" width="640"/>
+  <br/>
+  <em>Built-in speed test — download + upload bandwidth via Cloudflare.</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/settings.png" alt="Settings" width="540"/>
+  <br/>
+  <em>Settings — visibility, appearance, language fallback.</em>
+</p>
+
 ## Install
+
+### Homebrew
+
+```bash
+brew tap opensubtitles/iconping
+brew install --cask iconping
+```
 
 ### Download the DMG
 
@@ -115,7 +142,11 @@ Strings live in `Sources/IconPingApp/Resources/<lang>.lproj/Localizable.strings`
 
 ## Credits
 
-Inspired by Salvatore Sanfilippo (antirez)'s original [`iconping`](https://github.com/antirez/iconping) (BSD-3-Clause). Concept and the green/red dot lineage belong to him; this is a from-scratch Swift re-implementation under MIT.
+Inspired by Salvatore Sanfilippo (antirez)'s original [`iconping`](https://github.com/antirez/iconping) (BSD-3-Clause). The concept and green/red dot lineage belong to him; this is a from-scratch Swift re-implementation under MIT.
+
+## Security
+
+Found a vulnerability? Please email **admin@opensubtitles.org** instead of opening a public issue. Full policy in [SECURITY.md](SECURITY.md).
 
 ## License
 

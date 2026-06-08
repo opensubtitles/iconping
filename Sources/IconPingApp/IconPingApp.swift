@@ -59,6 +59,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             await NotificationService.shared.requestAuthorizationIfNeeded()
         }
 
+        // Background update check ~5 s after launch — silent if up-to-date or
+        // if GitHub is unreachable; alerts only when an update is actually
+        // available, so it isn't annoying.
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            await self.runUpdateCheck(silent: true)
+        }
+
         // Auto-open the dashboard if the user asked for it OR if they've disabled
         // both Dock and menu bar (otherwise they'd have no way to find the app).
         let mustShowDashboard = openDash || (!showDock && !showMenu)
@@ -244,6 +252,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         appMenu.addItem(.separator())
 
+        let updateItem = NSMenuItem(
+            title: NSLocalizedString("menu.checkForUpdates", value: "Check for Updates…", comment: ""),
+            action: #selector(menuCheckForUpdates), keyEquivalent: ""
+        )
+        updateItem.target = self
+        appMenu.addItem(updateItem)
+
+        appMenu.addItem(.separator())
+
         let hideItem = NSMenuItem(
             title: String(format: NSLocalizedString("menu.hide", value: "Hide %@", comment: ""), "IconPing"),
             action: #selector(NSApplication.hide(_:)), keyEquivalent: "h"
@@ -374,6 +391,65 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func menuResetStats() {
         viewModel?.resetStats()
+    }
+
+    @objc private func menuCheckForUpdates() {
+        Task { @MainActor in
+            await self.runUpdateCheck(silent: false)
+        }
+    }
+
+    /// `silent: true` is used by the optional background-on-launch check —
+    /// alerts only when there IS an update, never when up-to-date or on error.
+    @MainActor
+    func runUpdateCheck(silent: Bool) async {
+        let result = await UpdateChecker().check()
+        switch result {
+        case .upToDate(let current):
+            if silent { return }
+            let a = NSAlert()
+            a.messageText = NSLocalizedString("update.upToDate.title",
+                value: "You're up to date", comment: "")
+            a.informativeText = String(
+                format: NSLocalizedString("update.upToDate.body",
+                    value: "IconPing %d.%d.%d is the latest version.", comment: ""),
+                current.major, current.minor, current.patch
+            )
+            a.addButton(withTitle: "OK")
+            NSApp.activate(ignoringOtherApps: true)
+            a.runModal()
+        case .updateAvailable(let current, let latest):
+            let a = NSAlert()
+            a.messageText = String(
+                format: NSLocalizedString("update.available.title",
+                    value: "IconPing %@ is available", comment: ""),
+                latest.tagName
+            )
+            a.informativeText = String(
+                format: NSLocalizedString("update.available.body",
+                    value: "You're running %d.%d.%d. Open the Releases page to download.",
+                    comment: ""),
+                current.major, current.minor, current.patch
+            )
+            a.addButton(withTitle: NSLocalizedString("update.openReleases",
+                value: "Open Releases", comment: ""))
+            a.addButton(withTitle: NSLocalizedString("update.later",
+                value: "Later", comment: ""))
+            NSApp.activate(ignoringOtherApps: true)
+            let response = a.runModal()
+            if response == .alertFirstButtonReturn {
+                NSWorkspace.shared.open(latest.htmlURL)
+            }
+        case .error(let msg):
+            if silent { return }
+            let a = NSAlert()
+            a.messageText = NSLocalizedString("update.error.title",
+                value: "Update check failed", comment: "")
+            a.informativeText = msg
+            a.addButton(withTitle: "OK")
+            NSApp.activate(ignoringOtherApps: true)
+            a.runModal()
+        }
     }
 
     @objc private func menuOpenGitHub() {

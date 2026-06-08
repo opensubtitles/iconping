@@ -97,6 +97,16 @@
 "speedtest.elapsed" = "Temps";
 "speedtest.download" = "Descente";
 "speedtest.upload" = "Montée";
+
+/* Update check */
+"menu.checkForUpdates" = "Rechercher des mises à jour…";
+"update.upToDate.title" = "Vous êtes à jour";
+"update.upToDate.body" = "IconPing %d.%d.%d est la dernière version.";
+"update.available.title" = "IconPing %@ est disponible";
+"update.available.body" = "Vous utilisez %d.%d.%d. Ouvrez la page Releases pour télécharger.";
+"update.openReleases" = "Ouvrir Releases";
+"update.later" = "Plus tard";
+"update.error.title" = "Échec de la vérification";
 "speedtest.excellent" = "Excellent — ultra-rapide";
 "speedtest.good" = "Bon — bien rapide";
 "speedtest.fair" = "Correct — utilisable";

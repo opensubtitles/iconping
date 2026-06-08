@@ -36,7 +36,12 @@ jobs:
           body: |
             ## IconPing ${{ github.ref_name }}
 
-            Drag IconPing.app to /Applications and launch it from there.
+            ### Install
+            ```
+            brew tap opensubtitles/iconping
+            brew install --cask iconping
+            ```
+            Or drag IconPing.app from the DMG to /Applications.
 
             **First launch:** macOS will say the app is from an unidentified developer because v1 is ad-hoc signed (no Apple Developer ID yet). Right-click the app → **Open** → **Open** in the dialog. Subsequent launches are normal.
 
@@ -44,3 +49,35 @@ jobs:
             ```
             shasum -a 256 -c IconPing.dmg.sha256
             ```
+
+      - name: Bump Homebrew cask
+        # Requires a PAT with `contents:write` on opensubtitles/homebrew-iconping
+        # stored as HOMEBREW_TAP_TOKEN. Falls back to GITHUB_TOKEN (which only
+        # has write on this repo) — that fallback will fail with 403 on push,
+        # so we mark this step continue-on-error: the release itself still ships.
+        continue-on-error: true
+        env:
+          TAP_REPO: opensubtitles/homebrew-iconping
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          DMG_SHA=$(awk '{print $1}' build/IconPing.dmg.sha256)
+          echo "Bumping cask to $VERSION sha256=$DMG_SHA"
+
+          TMP=$(mktemp -d)
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${TAP_REPO}.git" "$TMP"
+          cd "$TMP"
+
+          # Update version + sha256 in Casks/iconping.rb (atomic sed)
+          /usr/bin/sed -i '' -E "s|^  version \".*\"|  version \"${VERSION}\"|" Casks/iconping.rb
+          /usr/bin/sed -i '' -E "s|^  sha256 \".*\"|  sha256 \"${DMG_SHA}\"|" Casks/iconping.rb
+
+          if git diff --quiet; then
+            echo "Cask already at ${VERSION} — nothing to commit"
+            exit 0
+          fi
+
+          git -c user.name="IconPing Release Bot" -c user.email="admin@opensubtitles.org" \
+            commit -am "Bump iconping to ${VERSION}"
+          git push origin main
