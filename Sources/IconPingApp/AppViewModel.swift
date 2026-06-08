@@ -80,10 +80,8 @@ final class AppViewModel: ObservableObject {
     }
 
     private func handle(_ sample: Sample) async {
-        // Compute rolling avg BEFORE ingest so threshold reacts to the same window.
-        let avg = stats.snapshot().rttAvgMs
         let prev = state
-        let result = stateMachine.ingest(sample: sample, rollingAvgMs: avg)
+        let result = stateMachine.ingest(sample: sample)
 
         await MainActor.run {
             self.stats.ingest(sample, state: result.state)

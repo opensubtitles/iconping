@@ -92,33 +92,48 @@ struct DashboardView: View {
     // MARK: - Chart
 
     private var chart: some View {
-        let data = Array(viewModel.recentSamples.suffix(viewModel.thresholds.rollingWindow))
+        let windowSize = viewModel.thresholds.rollingWindow
+        let raw = Array(viewModel.recentSamples.suffix(windowSize))
+        // Data flows in left-to-right as samples arrive. X axis adapts so a
+        // chart with few samples doesn't look broken — minimum 10 positions
+        // so single-sample views aren't visually jarring.
+        let xMax = max(raw.count - 1, 9)
+        let data = raw.enumerated().map { (i, s) in (x: i, sample: s) }
+
+        // Y domain: at least 0..(warn × 1.3) so the warn line is always visible,
+        // grow upward if any sample exceeds that.
+        let warn = viewModel.thresholds.latencyWarnMs
+        let observedMax = raw.compactMap { $0.rttMs }.max() ?? 0
+        let yMax = max(warn * 1.3, observedMax * 1.15, 50)
+
         return Chart {
-            ForEach(data) { s in
-                if let m = s.rttMs {
+            ForEach(Array(data.enumerated()), id: \.offset) { _, point in
+                if let m = point.sample.rttMs {
                     LineMark(
-                        x: .value("seq", Int(s.seq)),
+                        x: .value("pos", point.x),
                         y: .value("rtt", m)
                     )
                     .interpolationMethod(.monotone)
                     .foregroundStyle(Color.accentColor.gradient)
 
                     AreaMark(
-                        x: .value("seq", Int(s.seq)),
+                        x: .value("pos", point.x),
                         y: .value("rtt", m)
                     )
                     .interpolationMethod(.monotone)
                     .foregroundStyle(Color.accentColor.opacity(0.10).gradient)
                 } else {
-                    RuleMark(x: .value("seq", Int(s.seq)))
+                    RuleMark(x: .value("pos", point.x))
                         .foregroundStyle(.red.opacity(0.7))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [2,2]))
                 }
             }
-            RuleMark(y: .value("warn", viewModel.thresholds.latencyWarnMs))
+            RuleMark(y: .value("warn", warn))
                 .foregroundStyle(.orange.opacity(0.55))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [4,4]))
         }
+        .chartXScale(domain: 0...xMax)
+        .chartYScale(domain: 0...yMax)
         .chartXAxis(.hidden)
         .chartYAxis {
             AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { value in

@@ -23,6 +23,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var menuBarController: MenuBarController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // CRITICAL: instantiate Preferences.shared *before* reading anything,
+        // so registerDefaults() runs and the bool/int reads below see real
+        // defaults instead of false/0 (Apple's fallback for unregistered keys).
+        // Also normalize any garbage-on-disk values to safe ones in the same step.
+        let prefs = Preferences.shared
+        prefs.engineConfig = prefs.engineConfig
+        prefs.thresholds   = prefs.thresholds
+
         let defaults = UserDefaults.standard
         let showDock = defaults.bool(forKey: Preferences.Key.showInDock.rawValue)
         let showMenu = defaults.bool(forKey: Preferences.Key.showMenuBar.rawValue)
@@ -33,13 +41,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Standard macOS application menu bar (App / File / View / Window / Help)
         setupMainMenu()
-
-        // Normalize defaults at launch: round-trip every value through the
-        // sanitize/clamp accessors so any pre-existing garbage on disk gets
-        // rewritten to safe values before anything reads it again.
-        let prefs = Preferences.shared
-        prefs.engineConfig = prefs.engineConfig
-        prefs.thresholds   = prefs.thresholds
 
         let vm = AppViewModel()
         self.viewModel = vm
@@ -116,6 +117,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if let ms = exitAfter {
             DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(ms)) {
+                // Take one final screenshot of whichever debug window is open,
+                // so callers can run the app for N seconds and see the result.
+                if let dir = shotDir {
+                    if env["ICONPING_AUTO_DASHBOARD"] == "1" {
+                        Self.renderWindow(WindowManager.shared.dashboardWindow_internal,
+                                          to: "\(dir)/dashboard-final.png")
+                    }
+                    if env["ICONPING_AUTO_SETTINGS"] == "1" {
+                        Self.renderWindow(WindowManager.shared.settingsWindow_internal,
+                                          to: "\(dir)/settings-final.png")
+                    }
+                }
                 NSApp.terminate(nil)
             }
         }
