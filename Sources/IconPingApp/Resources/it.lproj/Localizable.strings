@@ -74,6 +74,7 @@
 "ui.flashOnChange" = "Lampeggia al cambio di stato";
 
 "language.system" = "Predefinita del sistema";
+"language.fallback" = "Se la lingua di sistema non è elencata, viene usato l'inglese.";
 "language.note" = "Richiede il riavvio.";
 
 "about.tagline" = "Una semplice spia di connettività nella barra dei menu.";

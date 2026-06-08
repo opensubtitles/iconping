@@ -74,6 +74,7 @@
 "ui.flashOnChange" = "Bliknúť pri zmene stavu";
 
 "language.system" = "Systémový jazyk";
+"language.fallback" = "Ak váš systémový jazyk nie je v zozname, použije sa angličtina.";
 "language.note" = "Vyžaduje reštart aplikácie.";
 
 "about.tagline" = "Jednoduchý indikátor pripojenia v lište.";

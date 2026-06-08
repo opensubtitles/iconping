@@ -20,7 +20,7 @@ final class WindowManager {
         let host = NSHostingController(rootView: DashboardView(viewModel: viewModel))
         let window = NSWindow(contentViewController: host)
         window.title = "IconPing — Dashboard"
-        window.setContentSize(NSSize(width: 720, height: 540))
+        window.setContentSize(NSSize(width: 620, height: 440))
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.isReleasedWhenClosed = false
         window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]

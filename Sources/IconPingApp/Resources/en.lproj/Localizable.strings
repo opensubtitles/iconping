@@ -87,6 +87,7 @@
 
 /* Language */
 "language.system" = "System default";
+"language.fallback" = "If your system language isn't listed, English is used.";
 "language.note" = "Requires restart to take effect.";
 
 /* About */

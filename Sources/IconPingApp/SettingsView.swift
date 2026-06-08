@@ -150,11 +150,6 @@ private struct ThresholdsTab: View {
                     Text(LocalizedStringKey("field.rollingWindow"))
                 }
             }
-            Section {
-                Toggle(isOn: $viewModel.thresholds.simpleMode) {
-                    Text(LocalizedStringKey("ui.simpleMode"))
-                }
-            }
         }
         .formStyle(.grouped)
     }
@@ -183,6 +178,7 @@ private struct AppearanceTab: View {
                 LabeledContent {
                     Picker("", selection: BindingHelper.languageOverride()) {
                         Text("language.system").tag(Optional<String>.none)
+                        Divider()
                         Text("English").tag(Optional("en"))
                         Text("Italiano").tag(Optional("it"))
                         Text("Español").tag(Optional("es"))
@@ -194,9 +190,14 @@ private struct AppearanceTab: View {
                 } label: {
                     Text(LocalizedStringKey("settings.language"))
                 }
-                Text("language.note")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("language.fallback")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("language.note")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
             }
         }
         .formStyle(.grouped)
@@ -286,16 +287,22 @@ enum BindingHelper {
     }
 
     static func languageOverride() -> Binding<String?> {
-        Binding<String?>(
+        // We track our own override flag, separate from the system's AppleLanguages
+        // (which exists for every user). nil = use system default; .some = override.
+        let overrideKey = "iconping.langOverrideEnabled"
+        return Binding<String?>(
             get: {
+                guard UserDefaults.standard.bool(forKey: overrideKey) else { return nil }
                 guard let arr = UserDefaults.standard.array(forKey: Preferences.Key.appleLanguages.rawValue) as? [String],
                       let first = arr.first else { return nil }
                 return String(first.prefix(2))
             },
             set: { newValue in
                 if let code = newValue {
+                    UserDefaults.standard.set(true, forKey: overrideKey)
                     UserDefaults.standard.set([code], forKey: Preferences.Key.appleLanguages.rawValue)
                 } else {
+                    UserDefaults.standard.set(false, forKey: overrideKey)
                     UserDefaults.standard.removeObject(forKey: Preferences.Key.appleLanguages.rawValue)
                 }
             }

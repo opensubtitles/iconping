@@ -74,6 +74,7 @@
 "ui.flashOnChange" = "Clignoter au changement d'état";
 
 "language.system" = "Langue du système";
+"language.fallback" = "Si la langue de votre système n'est pas dans la liste, l'anglais est utilisé.";
 "language.note" = "Nécessite un redémarrage.";
 
 "about.tagline" = "Un indicateur de connexion simple dans votre barre des menus.";

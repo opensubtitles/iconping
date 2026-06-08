@@ -7,50 +7,51 @@ struct DashboardView: View {
     @ObservedObject var viewModel: AppViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            header
+        VStack(spacing: 16) {
+            hero
+            statsRow
             chart
-                .frame(height: 130)
-            statsGrid
-            networkPath
-            eventLog
+            footer
         }
-        .padding(14)
-        .frame(width: 720, height: 540, alignment: .topLeading)
+        .padding(20)
+        .frame(width: 620, height: 440, alignment: .topLeading)
+        .background(.background)
     }
 
-    // MARK: - Header
+    // MARK: - Hero (big status)
 
-    private var header: some View {
-        HStack(alignment: .center, spacing: 12) {
-            StateBadge(state: viewModel.state)
-                .scaleEffect(1.15)
-                .frame(width: 36, height: 36)
+    private var hero: some View {
+        HStack(alignment: .center, spacing: 18) {
+            HeroBadge(state: viewModel.state)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(LocalizedStringKey(viewModel.state.localizationKey))
-                    .font(.title3.bold())
+                    .font(.system(size: 28, weight: .bold))
+                    .lineLimit(1)
                 HStack(spacing: 6) {
                     Text(viewModel.engineConfig.targetHost)
+                        .fontWeight(.medium)
                     Text("·").foregroundStyle(.tertiary)
                     Text(viewModel.resolvedAddress)
                     Text("·").foregroundStyle(.tertiary)
                     Text(viewModel.ipVersionInUse.rawValue.uppercased())
-                        .font(.caption2.bold())
+                        .font(.caption.weight(.bold))
                         .padding(.horizontal, 5).padding(.vertical, 1)
-                        .background(.quaternary, in: Capsule())
+                        .background(Color.accentColor.opacity(0.15), in: Capsule())
+                        .foregroundStyle(Color.accentColor)
                 }
-                .font(.caption)
+                .font(.callout)
                 .foregroundStyle(.secondary)
             }
 
             Spacer()
 
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 Button {
                     viewModel.togglePause()
                 } label: {
                     Image(systemName: viewModel.paused ? "play.fill" : "pause.fill")
+                        .frame(width: 12)
                 }
                 .help(viewModel.paused ? "menu.resume" : "menu.pause")
 
@@ -59,14 +60,20 @@ struct DashboardView: View {
                 } label: {
                     Text(LocalizedStringKey("action.reset"))
                 }
-
-                Button {
-                    exportCSV()
-                } label: {
-                    Text(LocalizedStringKey("action.export"))
-                }
             }
             .controlSize(.small)
+        }
+    }
+
+    // MARK: - Big stats row (only 4: Latency, Loss, Jitter, Uptime)
+
+    private var statsRow: some View {
+        let s = viewModel.snapshot
+        return HStack(spacing: 10) {
+            BigStat(labelKey: "metric.latency", value: ms(s.rttLastMs),    tint: latencyTint(s.rttLastMs))
+            BigStat(labelKey: "metric.loss",    value: pct(s.lossPercent), tint: lossTint(s.lossPercent))
+            BigStat(labelKey: "metric.jitter",  value: ms(s.jitterMs),     tint: .secondary)
+            BigStat(labelKey: "metric.uptime",  value: pct(s.uptimePercent), tint: uptimeTint(s.uptimePercent))
         }
     }
 
@@ -76,12 +83,20 @@ struct DashboardView: View {
         let data = Array(viewModel.recentSamples.suffix(viewModel.thresholds.rollingWindow))
         return Chart {
             ForEach(data) { s in
-                if let ms = s.rttMs {
+                if let m = s.rttMs {
                     LineMark(
                         x: .value("seq", Int(s.seq)),
-                        y: .value("rtt", ms)
+                        y: .value("rtt", m)
                     )
-                    .foregroundStyle(Color.accentColor)
+                    .interpolationMethod(.monotone)
+                    .foregroundStyle(Color.accentColor.gradient)
+
+                    AreaMark(
+                        x: .value("seq", Int(s.seq)),
+                        y: .value("rtt", m)
+                    )
+                    .interpolationMethod(.monotone)
+                    .foregroundStyle(Color.accentColor.opacity(0.10).gradient)
                 } else {
                     RuleMark(x: .value("seq", Int(s.seq)))
                         .foregroundStyle(.red.opacity(0.7))
@@ -89,101 +104,53 @@ struct DashboardView: View {
                 }
             }
             RuleMark(y: .value("warn", viewModel.thresholds.latencyWarnMs))
-                .foregroundStyle(.orange.opacity(0.6))
+                .foregroundStyle(.orange.opacity(0.55))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [4,4]))
         }
         .chartXAxis(.hidden)
         .chartYAxis {
-            AxisMarks(position: .leading) { value in
-                AxisGridLine()
-                AxisValueLabel() {
+            AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { value in
+                AxisGridLine().foregroundStyle(.quaternary)
+                AxisValueLabel {
                     if let v = value.as(Double.self) {
-                        Text("\(Int(v))").font(.caption2)
+                        Text("\(Int(v))").font(.caption2).foregroundStyle(.tertiary)
                     }
                 }
             }
         }
-        .padding(.horizontal, 4)
-        .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 6))
+        .frame(maxHeight: .infinity)
+        .padding(.horizontal, 6).padding(.vertical, 6)
+        .background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
     }
 
-    // MARK: - Stats grid (4 cols × 3 rows, compact)
+    // MARK: - Footer (network path + export)
 
-    private var statsGrid: some View {
-        let s = viewModel.snapshot
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 6) {
-            StatCell(labelKey: "metric.min",    value: ms(s.rttMinMs))
-            StatCell(labelKey: "metric.avg",    value: ms(s.rttAvgMs))
-            StatCell(labelKey: "metric.max",    value: ms(s.rttMaxMs))
-            StatCell(labelKey: "metric.latency",value: ms(s.rttLastMs))
-
-            StatCell(labelKey: "metric.jitter", value: ms(s.jitterMs))
-            StatCell(labelKey: "metric.loss",   value: String(format: "%.1f%%", s.lossPercent))
-            StatCell(labelKey: "metric.uptime", value: String(format: "%.1f%%", s.uptimePercent))
-            StatCell(labelKey: "stats.window",  value: "\(s.windowSize)")
-
-            StatCell(labelKey: "stats.sent",     value: "\(s.sent)")
-            StatCell(labelKey: "stats.received", value: "\(s.received)")
-            StatCell(labelKey: "stats.lost",     value: "\(s.lost)")
-            StatCell(labelKey: "stats.since",    value: relativeSince(s.since))
-        }
-    }
-
-    // MARK: - Network path
-
-    private var networkPath: some View {
+    private var footer: some View {
         HStack(spacing: 10) {
             Image(systemName: "network").foregroundStyle(.secondary)
-            Text(viewModel.pathInfo?.interfaceTypes.joined(separator: ", ") ?? "—")
             if let p = viewModel.pathInfo {
+                Text(p.interfaceTypes.joined(separator: ", "))
                 Text("·").foregroundStyle(.tertiary)
-                Text(p.supportsIPv4 ? "IPv4" : "—").foregroundStyle(p.supportsIPv4 ? .primary : .tertiary)
+                Text(p.supportsIPv4 ? "IPv4" : "").foregroundStyle(p.supportsIPv4 ? .primary : .tertiary)
                 Text("·").foregroundStyle(.tertiary)
-                Text(p.supportsIPv6 ? "IPv6" : "—").foregroundStyle(p.supportsIPv6 ? .primary : .tertiary)
+                Text(p.supportsIPv6 ? "IPv6" : "").foregroundStyle(p.supportsIPv6 ? .primary : .tertiary)
                 if p.isExpensive {
                     Text("·").foregroundStyle(.tertiary)
                     Label(LocalizedStringKey("path.expensive"), systemImage: "creditcard")
                         .foregroundStyle(.orange)
                 }
+            } else {
+                Text("—").foregroundStyle(.tertiary)
             }
             Spacer()
+            Button {
+                exportCSV()
+            } label: {
+                Text(LocalizedStringKey("action.export"))
+            }
+            .controlSize(.small)
         }
         .font(.caption)
-        .padding(.horizontal, 10).padding(.vertical, 6)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
-    }
-
-    // MARK: - Event log
-
-    private var eventLog: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(LocalizedStringKey("section.events"))
-                    .font(.caption.bold())
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text("\(viewModel.transitions.count)")
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.tertiary)
-            }
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 2) {
-                    if viewModel.transitions.isEmpty {
-                        Text(LocalizedStringKey("events.none"))
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                            .padding(.vertical, 4)
-                    } else {
-                        ForEach(viewModel.transitions) { t in
-                            EventRow(transition: t)
-                        }
-                    }
-                }
-                .padding(8)
-            }
-            .frame(maxHeight: .infinity)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
-        }
     }
 
     // MARK: - Helpers
@@ -193,11 +160,26 @@ struct DashboardView: View {
         return "—"
     }
 
-    private func relativeSince(_ date: Date) -> String {
-        let s = Int(Date().timeIntervalSince(date))
-        if s < 60 { return "\(s)s" }
-        if s < 3600 { return "\(s / 60)m" }
-        return String(format: "%dh%02dm", s / 3600, (s % 3600) / 60)
+    private func pct(_ value: Double) -> String {
+        String(format: "%.1f%%", value)
+    }
+
+    private func latencyTint(_ ms: Double?) -> Color {
+        guard let v = ms else { return .secondary }
+        if v >= viewModel.thresholds.latencyWarnMs { return .orange }
+        return .primary
+    }
+
+    private func lossTint(_ pct: Double) -> Color {
+        if pct >= 5 { return .red }
+        if pct > 0  { return .orange }
+        return .primary
+    }
+
+    private func uptimeTint(_ pct: Double) -> Color {
+        if pct >= 99 { return .green }
+        if pct >= 95 { return .orange }
+        return .red
     }
 
     private func exportCSV() {
@@ -217,45 +199,62 @@ struct DashboardView: View {
     }
 }
 
-struct StatCell: View {
-    let labelKey: String
-    let value: String
+// MARK: - Subviews
+
+struct HeroBadge: View {
+    let state: ConnectivityState
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(LocalizedStringKey(labelKey))
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            Text(value)
-                .font(.system(.body, design: .rounded).weight(.medium))
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+        ZStack {
+            Circle()
+                .fill(tint.opacity(0.18))
+                .frame(width: 64, height: 64)
+            Image(systemName: symbol)
+                .font(.system(size: 32, weight: .semibold))
+                .foregroundStyle(tint)
         }
-        .padding(.horizontal, 8).padding(.vertical, 5)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 5))
+        .accessibilityLabel(Text(LocalizedStringKey(state.localizationKey)))
+    }
+
+    private var symbol: String {
+        switch state {
+        case .up:      return "checkmark.circle.fill"
+        case .slow:    return "tortoise.fill"
+        case .down:    return "wifi.exclamationmark"
+        case .unknown: return "circle.dotted"
+        }
+    }
+
+    private var tint: Color {
+        switch state {
+        case .up:      return .green
+        case .slow:    return .orange
+        case .down:    return .red
+        case .unknown: return .secondary
+        }
     }
 }
 
-struct EventRow: View {
-    let transition: StateTransition
+struct BigStat: View {
+    let labelKey: String
+    let value: String
+    let tint: Color
+
     var body: some View {
-        HStack(spacing: 8) {
-            Text(transition.at, format: .dateTime.hour().minute().second())
-                .font(.system(.caption, design: .monospaced))
-                .foregroundStyle(.secondary)
-            Text(LocalizedStringKey(transition.from.localizationKey))
+        VStack(alignment: .leading, spacing: 4) {
+            Text(value)
+                .font(.system(size: 22, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(tint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(LocalizedStringKey(labelKey))
                 .font(.caption)
-            Image(systemName: "arrow.right")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-            Text(LocalizedStringKey(transition.to.localizationKey))
-                .font(.caption.bold())
-            if let note = transition.note {
-                Text("(\(note))").font(.caption2).foregroundStyle(.tertiary)
-            }
-            Spacer()
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
     }
 }

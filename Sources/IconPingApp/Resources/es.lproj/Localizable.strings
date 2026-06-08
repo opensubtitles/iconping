@@ -74,6 +74,7 @@
 "ui.flashOnChange" = "Parpadear al cambiar de estado";
 
 "language.system" = "Predeterminado del sistema";
+"language.fallback" = "Si tu idioma del sistema no está en la lista, se usa inglés.";
 "language.note" = "Requiere reiniciar la aplicación.";
 
 "about.tagline" = "Un indicador sencillo de conectividad en la barra de menús.";
