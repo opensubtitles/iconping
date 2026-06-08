@@ -12,7 +12,7 @@ struct PopoverView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(LocalizedStringKey(viewModel.state.localizationKey))
                         .font(.headline)
-                    Text(viewModel.engineConfig.targetHost + "  ·  " + viewModel.resolvedAddress)
+                    Text(subtitleLine)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -49,6 +49,15 @@ struct PopoverView: View {
         }
         .padding(14)
         .frame(width: 320)
+    }
+
+    private var subtitleLine: String {
+        let target = viewModel.engineConfig.targetHost
+        let resolved = viewModel.resolvedAddress
+        if resolved.isEmpty || resolved == "-" || resolved == "unresolved" || resolved == target {
+            return target
+        }
+        return "\(target)  ·  \(resolved)"
     }
 
     private var rttString: String {

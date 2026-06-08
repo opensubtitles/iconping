@@ -31,8 +31,10 @@ struct DashboardView: View {
                 HStack(spacing: 6) {
                     Text(viewModel.engineConfig.targetHost)
                         .fontWeight(.medium)
-                    Text("·").foregroundStyle(.tertiary)
-                    Text(viewModel.resolvedAddress)
+                    if showResolved {
+                        Text("·").foregroundStyle(.tertiary)
+                        Text(viewModel.resolvedAddress)
+                    }
                     Text("·").foregroundStyle(.tertiary)
                     Text(viewModel.ipVersionInUse.rawValue.uppercased())
                         .font(.caption.weight(.bold))
@@ -154,6 +156,16 @@ struct DashboardView: View {
     }
 
     // MARK: - Helpers
+
+    /// Only show the resolved IP when it actually adds information (i.e. the user
+    /// typed a hostname). If the target is already an IP literal, the resolved
+    /// address is identical and duplicating it is noise.
+    private var showResolved: Bool {
+        let resolved = viewModel.resolvedAddress
+        let target = viewModel.engineConfig.targetHost
+        guard !resolved.isEmpty, resolved != "-", resolved != "unresolved" else { return false }
+        return resolved != target
+    }
 
     private func ms(_ value: Double?) -> String {
         if let v = value { return String(format: "%.0f ms", v) }
