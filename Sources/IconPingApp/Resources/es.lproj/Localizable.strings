@@ -84,18 +84,21 @@
 "field.target.invalid" = "Nombre de host o IP no válido.";
 "action.resetAll" = "Restablecer todos los ajustes";
 
-/* Quick test */
-"action.quicktest" = "Prueba rápida";
-"action.quicktest.help" = "Ejecuta una ráfaga de 30 pings para medir la conexión ahora.";
-"quicktest.running" = "Ejecutando prueba rápida…";
-"quicktest.again" = "Repetir prueba";
-"quicktest.dismiss" = "Hecho";
-"quicktest.summary" = "%d / %d respuestas en %.1f s";
-"quicktest.excellent" = "Conexión excelente";
-"quicktest.good" = "Conexión buena";
-"quicktest.fair" = "Conexión aceptable";
-"quicktest.poor" = "Conexión deficiente";
-"quicktest.broken" = "Conexión fallida";
+/* Speed test */
+"action.speedtest" = "Prueba de velocidad";
+"action.speedtest.help" = "Mide la velocidad de descarga en Mbps con Cloudflare.";
+"speedtest.running" = "Midiendo velocidad de descarga…";
+"speedtest.cancel" = "Cancelar";
+"speedtest.again" = "Repetir prueba";
+"speedtest.dismiss" = "Hecho";
+"speedtest.summary" = "%.1f MB en %.1f s · %@";
+"speedtest.downloaded" = "Descargado";
+"speedtest.elapsed" = "Tiempo";
+"speedtest.excellent" = "Excelente — ultrarrápida";
+"speedtest.good" = "Buena — bastante rápida";
+"speedtest.fair" = "Aceptable — usable";
+"speedtest.poor" = "Conexión lenta";
+"speedtest.broken" = "Prueba de velocidad fallida";
 
 "language.system" = "Predeterminado del sistema";
 "language.fallback" = "Si tu idioma del sistema no está en la lista, se usa inglés.";

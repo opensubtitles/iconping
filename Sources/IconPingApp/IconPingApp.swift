@@ -107,10 +107,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        // Optional auto-trigger of the Quick Test (for screenshot verification).
-        if let trig = env["ICONPING_AUTO_QUICKTEST_MS"].flatMap(Int.init) {
+        // Optional auto-trigger of the Speed Test (for screenshot verification).
+        if let trig = env["ICONPING_AUTO_SPEEDTEST_MS"].flatMap(Int.init) {
             DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(trig)) { [weak self] in
-                self?.viewModel?.startQuickTest()
+                self?.viewModel?.startSpeedTest()
             }
         }
         if let shotAt = env["ICONPING_SHOT_AT_MS"].flatMap(Int.init), let dir = shotDir {

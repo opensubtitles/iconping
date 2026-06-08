@@ -98,18 +98,21 @@
 "field.target.invalid" = "Invalid hostname or IP address.";
 "action.resetAll" = "Reset all settings to defaults";
 
-/* Quick test */
-"action.quicktest" = "Quick test";
-"action.quicktest.help" = "Run a 30-ping burst to measure your connection right now.";
-"quicktest.running" = "Running quick test…";
-"quicktest.again" = "Test again";
-"quicktest.dismiss" = "Done";
-"quicktest.summary" = "%d / %d replies in %.1f s";
-"quicktest.excellent" = "Excellent connection";
-"quicktest.good" = "Good connection";
-"quicktest.fair" = "Fair connection";
-"quicktest.poor" = "Poor connection";
-"quicktest.broken" = "Connection failed";
+/* Speed test (download bandwidth via HTTP) */
+"action.speedtest" = "Speed test";
+"action.speedtest.help" = "Measure your download speed in Mbps using a Cloudflare endpoint.";
+"speedtest.running" = "Measuring download speed…";
+"speedtest.cancel" = "Cancel";
+"speedtest.again" = "Test again";
+"speedtest.dismiss" = "Done";
+"speedtest.summary" = "%.1f MB in %.1f s · %@";
+"speedtest.downloaded" = "Downloaded";
+"speedtest.elapsed" = "Elapsed";
+"speedtest.excellent" = "Excellent — ultra-fast";
+"speedtest.good" = "Good — plenty fast";
+"speedtest.fair" = "Fair — usable";
+"speedtest.poor" = "Slow connection";
+"speedtest.broken" = "Speed test failed";
 
 /* Language */
 "language.system" = "System default";

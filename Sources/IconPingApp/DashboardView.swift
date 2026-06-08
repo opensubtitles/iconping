@@ -12,8 +12,8 @@ struct DashboardView: View {
             statsRow
             ZStack {
                 chart
-                if viewModel.quickTestState != .idle {
-                    QuickTestCard(viewModel: viewModel)
+                if viewModel.speedTestState != .idle {
+                    SpeedTestCard(viewModel: viewModel)
                         .transition(.opacity.combined(with: .scale(scale: 0.97)))
                 }
             }
@@ -22,7 +22,7 @@ struct DashboardView: View {
         .padding(20)
         .frame(width: 620, height: 440, alignment: .topLeading)
         .background(.background)
-        .animation(.easeInOut(duration: 0.2), value: viewModel.quickTestState)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.speedTestState)
     }
 
     // MARK: - Hero (big status)
@@ -67,13 +67,13 @@ struct DashboardView: View {
 
             HStack(spacing: 8) {
                 Button {
-                    viewModel.startQuickTest()
+                    viewModel.startSpeedTest()
                 } label: {
-                    Label("action.quicktest", systemImage: "speedometer")
+                    Label("action.speedtest", systemImage: "speedometer")
                 }
-                .help("action.quicktest.help")
-                .disabled(viewModel.quickTestState != .idle && {
-                    if case .finished = viewModel.quickTestState { return false }
+                .help("action.speedtest.help")
+                .disabled(viewModel.speedTestState != .idle && {
+                    if case .finished = viewModel.speedTestState { return false }
                     return true
                 }())
 
@@ -289,31 +289,21 @@ struct DashboardView: View {
 
 // MARK: - Subviews
 
-struct QuickTestCard: View {
+struct SpeedTestCard: View {
     @ObservedObject var viewModel: AppViewModel
 
     var body: some View {
         VStack(spacing: 14) {
-            switch viewModel.quickTestState {
+            switch viewModel.speedTestState {
             case .idle:
                 EmptyView()
-            case .running(let progress):
-                HStack(spacing: 10) {
-                    ProgressView().controlSize(.small)
-                    Text(LocalizedStringKey("quicktest.running"))
-                        .font(.headline)
-                }
-                ProgressView(value: progress)
-                    .progressViewStyle(.linear)
-                    .frame(maxWidth: 260)
-                Text(String(format: "%.0f%%", progress * 100))
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+            case .running(let bytes, let mbpsLive, let elapsed):
+                runningView(bytes: bytes, mbpsLive: mbpsLive, elapsed: elapsed)
             case .finished(let result):
                 resultsView(result)
             }
         }
-        .padding(20)
+        .padding(22)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             RoundedRectangle(cornerRadius: 10)
@@ -327,87 +317,128 @@ struct QuickTestCard: View {
     }
 
     @ViewBuilder
-    private func resultsView(_ result: QuickTestResult) -> some View {
-        HStack(spacing: 12) {
-            verdictBadge(result.verdict)
-            VStack(alignment: .leading, spacing: 1) {
-                verdictTitle(result.verdict)
-                    .font(.title2.bold())
-                Text(String(format: NSLocalizedString("quicktest.summary",
-                                                     value: "%d / %d replies in %.1f s",
-                                                     comment: ""),
-                            result.received, result.sent, result.durationSeconds))
-                    .font(.caption)
+    private func runningView(bytes: Int, mbpsLive: Double, elapsed: Double) -> some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 10) {
+                ProgressView().controlSize(.small)
+                Text(LocalizedStringKey("speedtest.running")).font(.headline)
+                Spacer()
+            }
+            // Big live Mbps readout
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(String(format: "%.1f", mbpsLive))
+                    .font(.system(size: 44, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.tint)
+                Text("Mbps")
+                    .font(.title3.bold())
                     .foregroundStyle(.secondary)
+            }
+            HStack(spacing: 14) {
+                liveStat("speedtest.downloaded",
+                         String(format: "%.1f MB", Double(bytes) / (1024.0 * 1024.0)))
+                liveStat("speedtest.elapsed",
+                         String(format: "%.1fs", elapsed))
+            }
+            ProgressView(value: min(elapsed / 8.0, 1.0))
+                .progressViewStyle(.linear)
+                .tint(Color.accentColor)
+                .frame(maxWidth: 320)
+
+            HStack {
+                Spacer()
+                Button {
+                    viewModel.cancelSpeedTest()
+                } label: { Text(LocalizedStringKey("speedtest.cancel")) }
+                .controlSize(.small)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func resultsView(_ result: SpeedTestResult) -> some View {
+        HStack(spacing: 14) {
+            verdictBadge(result.verdict)
+            VStack(alignment: .leading, spacing: 2) {
+                verdictTitle(result.verdict)
+                    .font(.title3.bold())
+                if let err = result.errorDescription {
+                    Text(err)
+                        .font(.caption).foregroundStyle(.red)
+                        .lineLimit(2)
+                } else {
+                    Text(String(format: NSLocalizedString("speedtest.summary",
+                                                         value: "%.1f MB in %.1f s · %@",
+                                                         comment: ""),
+                                result.megabytesReceived,
+                                result.durationSeconds,
+                                result.serverHost))
+                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
             }
             Spacer()
         }
 
-        HStack(spacing: 18) {
-            quickStat("metric.avg",  ms(result.avgMs))
-            quickStat("metric.min",  ms(result.minMs))
-            quickStat("metric.max",  ms(result.maxMs))
-            quickStat("metric.loss", String(format: "%.1f%%", result.lossPercent))
-            quickStat("metric.jitter", ms(result.jitterMs))
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(String(format: "%.1f", result.mbps))
+                .font(.system(size: 56, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(verdictStyle(result.verdict).1)
+            Text("Mbps")
+                .font(.title2.bold()).foregroundStyle(.secondary)
+            Spacer()
         }
 
         HStack {
             Button {
-                viewModel.startQuickTest()
-            } label: {
-                Label("quicktest.again", systemImage: "arrow.clockwise")
-            }
+                viewModel.startSpeedTest()
+            } label: { Label("speedtest.again", systemImage: "arrow.clockwise") }
             Spacer()
             Button {
-                viewModel.dismissQuickTest()
-            } label: {
-                Text(LocalizedStringKey("quicktest.dismiss"))
-            }
+                viewModel.dismissSpeedTest()
+            } label: { Text(LocalizedStringKey("speedtest.dismiss")) }
             .keyboardShortcut(.defaultAction)
         }
         .controlSize(.small)
-        .padding(.top, 6)
     }
 
     @ViewBuilder
-    private func verdictTitle(_ v: QuickTestResult.Verdict) -> some View {
+    private func verdictTitle(_ v: SpeedTestResult.Verdict) -> some View {
         switch v {
-        case .excellent: Text("quicktest.excellent")
-        case .good:      Text("quicktest.good")
-        case .fair:      Text("quicktest.fair")
-        case .poor:      Text("quicktest.poor")
-        case .broken:    Text("quicktest.broken")
+        case .excellent: Text("speedtest.excellent")
+        case .good:      Text("speedtest.good")
+        case .fair:      Text("speedtest.fair")
+        case .poor:      Text("speedtest.poor")
+        case .broken:    Text("speedtest.broken")
         }
     }
 
-    private func verdictBadge(_ v: QuickTestResult.Verdict) -> some View {
+    private func verdictBadge(_ v: SpeedTestResult.Verdict) -> some View {
         let (icon, tint) = verdictStyle(v)
         return ZStack {
-            Circle().fill(tint.opacity(0.18)).frame(width: 44, height: 44)
+            Circle().fill(tint.opacity(0.18)).frame(width: 46, height: 46)
             Image(systemName: icon).font(.system(size: 22, weight: .semibold)).foregroundStyle(tint)
         }
     }
 
-    private func verdictStyle(_ v: QuickTestResult.Verdict) -> (String, Color) {
+    private func verdictStyle(_ v: SpeedTestResult.Verdict) -> (String, Color) {
         switch v {
-        case .excellent: return ("checkmark.seal.fill", .green)
-        case .good:      return ("checkmark.circle.fill", .green)
-        case .fair:      return ("equal.circle.fill", .orange)
-        case .poor:      return ("exclamationmark.triangle.fill", .red)
-        case .broken:    return ("xmark.octagon.fill", .red)
+        case .excellent: return ("bolt.fill",                       .green)
+        case .good:      return ("checkmark.seal.fill",             .green)
+        case .fair:      return ("equal.circle.fill",               .orange)
+        case .poor:      return ("tortoise.fill",                   .orange)
+        case .broken:    return ("xmark.octagon.fill",              .red)
         }
     }
 
-    private func quickStat(_ labelKey: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(LocalizedStringKey(labelKey))
-                .font(.caption2).foregroundStyle(.secondary)
+    private func liveStat(_ labelKey: String, _ value: String) -> some View {
+        VStack(spacing: 1) {
             Text(value)
                 .font(.callout.monospacedDigit().weight(.medium))
+            Text(LocalizedStringKey(labelKey))
+                .font(.caption2).foregroundStyle(.secondary)
         }
     }
-
-    private func ms(_ v: Double?) -> String { v.map { String(format: "%.0f ms", $0) } ?? "—" }
 }
 
 struct HeroBadge: View {

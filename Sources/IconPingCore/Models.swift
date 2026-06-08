@@ -160,42 +160,41 @@ public struct Preset: Sendable, Equatable {
     public static let all: [Preset] = [.default, .satellite, .lan]
 }
 
-public struct QuickTestResult: Sendable, Equatable {
-    public let sent: Int
-    public let received: Int
-    public let minMs: Double?
-    public let avgMs: Double?
-    public let maxMs: Double?
-    public let jitterMs: Double?
+/// Result of a one-shot bandwidth speed test against an HTTPS endpoint.
+public struct SpeedTestResult: Sendable, Equatable {
+    public let mbps: Double
+    public let bytesReceived: Int
     public let durationSeconds: Double
+    public let serverHost: String
+    public let errorDescription: String?
 
-    public init(sent: Int, received: Int, minMs: Double?, avgMs: Double?, maxMs: Double?, jitterMs: Double?, durationSeconds: Double) {
-        self.sent = sent
-        self.received = received
-        self.minMs = minMs
-        self.avgMs = avgMs
-        self.maxMs = maxMs
-        self.jitterMs = jitterMs
+    public init(
+        mbps: Double, bytesReceived: Int, durationSeconds: Double,
+        serverHost: String, errorDescription: String? = nil
+    ) {
+        self.mbps = mbps
+        self.bytesReceived = bytesReceived
         self.durationSeconds = durationSeconds
-    }
-
-    public var lossPercent: Double {
-        guard sent > 0 else { return 0 }
-        return Double(sent - received) / Double(sent) * 100.0
+        self.serverHost = serverHost
+        self.errorDescription = errorDescription
     }
 
     public enum Verdict: String, Sendable {
         case excellent, good, fair, poor, broken
     }
 
+    /// Brackets tuned for residential broadband in 2026 — adjust if needed.
     public var verdict: Verdict {
-        if received == 0 { return .broken }
-        if lossPercent >= 10 { return .poor }
-        guard let avg = avgMs else { return .poor }
-        if lossPercent == 0 && avg < 50  && (jitterMs ?? 0) < 10  { return .excellent }
-        if lossPercent < 2  && avg < 150 && (jitterMs ?? 0) < 50  { return .good }
-        if lossPercent < 5  && avg < 300                           { return .fair }
+        if errorDescription != nil { return .broken }
+        if mbps < 1     { return .broken }
+        if mbps >= 100  { return .excellent }
+        if mbps >= 25   { return .good }
+        if mbps >= 5    { return .fair }
         return .poor
+    }
+
+    public var megabytesReceived: Double {
+        Double(bytesReceived) / (1024.0 * 1024.0)
     }
 }
 

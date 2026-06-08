@@ -84,18 +84,21 @@
 "field.target.invalid" = "Neplatný názov hostiteľa alebo IP adresa.";
 "action.resetAll" = "Obnoviť všetky nastavenia";
 
-/* Quick test */
-"action.quicktest" = "Rýchly test";
-"action.quicktest.help" = "Spustí 30 pingov za sebou na zmeranie aktuálneho pripojenia.";
-"quicktest.running" = "Prebieha rýchly test…";
-"quicktest.again" = "Spustiť znova";
-"quicktest.dismiss" = "Hotovo";
-"quicktest.summary" = "%d / %d odpovedí za %.1f s";
-"quicktest.excellent" = "Vynikajúce pripojenie";
-"quicktest.good" = "Dobré pripojenie";
-"quicktest.fair" = "Priemerné pripojenie";
-"quicktest.poor" = "Slabé pripojenie";
-"quicktest.broken" = "Pripojenie zlyhalo";
+/* Speed test */
+"action.speedtest" = "Test rýchlosti";
+"action.speedtest.help" = "Zmeria rýchlosť sťahovania v Mbps cez Cloudflare.";
+"speedtest.running" = "Meranie rýchlosti sťahovania…";
+"speedtest.cancel" = "Zrušiť";
+"speedtest.again" = "Spustiť znova";
+"speedtest.dismiss" = "Hotovo";
+"speedtest.summary" = "%.1f MB za %.1f s · %@";
+"speedtest.downloaded" = "Stiahnuté";
+"speedtest.elapsed" = "Čas";
+"speedtest.excellent" = "Výborná — veľmi rýchla";
+"speedtest.good" = "Dobrá — dosť rýchla";
+"speedtest.fair" = "Priemerná — použiteľná";
+"speedtest.poor" = "Pomalé pripojenie";
+"speedtest.broken" = "Test rýchlosti zlyhal";
 
 "language.system" = "Systémový jazyk";
 "language.fallback" = "Ak váš systémový jazyk nie je v zozname, použije sa angličtina.";
