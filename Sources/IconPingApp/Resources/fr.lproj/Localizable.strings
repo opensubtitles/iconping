@@ -81,6 +81,8 @@
 "error.socket" = "Erreur de socket ICMP";
 "error.noRoute" = "Pas de route vers l'hôte";
 "error.timeout" = "Aucune réponse de la cible";
+"field.target.invalid" = "Nom d'hôte ou adresse IP invalide.";
+"action.resetAll" = "Réinitialiser tous les paramètres";
 
 "language.system" = "Langue du système";
 "language.fallback" = "Si la langue de votre système n'est pas dans la liste, l'anglais est utilisé.";

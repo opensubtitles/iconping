@@ -34,6 +34,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Standard macOS application menu bar (App / File / View / Window / Help)
         setupMainMenu()
 
+        // Normalize defaults at launch: round-trip every value through the
+        // sanitize/clamp accessors so any pre-existing garbage on disk gets
+        // rewritten to safe values before anything reads it again.
+        let prefs = Preferences.shared
+        prefs.engineConfig = prefs.engineConfig
+        prefs.thresholds   = prefs.thresholds
+
         let vm = AppViewModel()
         self.viewModel = vm
 

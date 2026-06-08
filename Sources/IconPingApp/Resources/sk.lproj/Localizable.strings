@@ -81,6 +81,8 @@
 "error.socket" = "Chyba ICMP soketu";
 "error.noRoute" = "Žiadna cesta k hostiteľovi";
 "error.timeout" = "Žiadna odpoveď z cieľa";
+"field.target.invalid" = "Neplatný názov hostiteľa alebo IP adresa.";
+"action.resetAll" = "Obnoviť všetky nastavenia";
 
 "language.system" = "Systémový jazyk";
 "language.fallback" = "Ak váš systémový jazyk nie je v zozname, použije sa angličtina.";

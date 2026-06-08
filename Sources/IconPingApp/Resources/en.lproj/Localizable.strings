@@ -95,6 +95,8 @@
 "error.socket" = "ICMP socket error";
 "error.noRoute" = "No route to host";
 "error.timeout" = "No reply from target";
+"field.target.invalid" = "Invalid hostname or IP address.";
+"action.resetAll" = "Reset all settings to defaults";
 
 /* Language */
 "language.system" = "System default";

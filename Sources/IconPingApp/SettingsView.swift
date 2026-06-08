@@ -32,13 +32,31 @@ struct SettingsView: View {
 private struct GeneralTab: View {
     @ObservedObject var viewModel: AppViewModel
 
+    private var isTargetValid: Bool {
+        Preferences.isValidTargetHost(
+            viewModel.engineConfig.targetHost.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+    }
+
     var body: some View {
         Form {
             Section("settings.general") {
                 LabeledContent {
-                    TextField("", text: $viewModel.engineConfig.targetHost)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 240)
+                    VStack(alignment: .leading, spacing: 4) {
+                        TextField("", text: $viewModel.engineConfig.targetHost)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 240)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 5)
+                                    .stroke(isTargetValid ? Color.clear : Color.red, lineWidth: 1)
+                            )
+                        if !isTargetValid {
+                            Text("field.target.invalid")
+                                .font(.caption2)
+                                .foregroundStyle(.red)
+                                .frame(width: 240, alignment: .leading)
+                        }
+                    }
                 } label: {
                     Text(LocalizedStringKey("field.target"))
                 }
@@ -103,6 +121,17 @@ private struct GeneralTab: View {
                 }
                 Toggle(isOn: BindingHelper.userDefaultsBool(.openDashboardOnLaunch)) {
                     Text(LocalizedStringKey("ui.openDashboardOnLaunch"))
+                }
+            }
+
+            Section {
+                Button(role: .destructive) {
+                    Preferences.shared.resetToDefaults()
+                    viewModel.engineConfig = Preferences.shared.engineConfig
+                    viewModel.thresholds   = Preferences.shared.thresholds
+                } label: {
+                    Text(LocalizedStringKey("action.resetAll"))
+                        .frame(maxWidth: .infinity)
                 }
             }
         }
