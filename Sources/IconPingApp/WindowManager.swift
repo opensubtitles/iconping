@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import IconPingCore
 
 @MainActor
 final class WindowManager {
@@ -38,7 +39,7 @@ final class WindowManager {
         let host = NSHostingController(rootView: SettingsView(viewModel: viewModel))
         let window = NSWindow(contentViewController: host)
         window.title = "IconPing — Settings"
-        window.setContentSize(NSSize(width: 580, height: 460))
+        window.setContentSize(NSSize(width: 580, height: 560))
         window.styleMask = [.titled, .closable]
         window.isReleasedWhenClosed = false
         window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
@@ -52,8 +53,13 @@ final class WindowManager {
         if window === dashboardWindow { dashboardWindow = nil }
         if window === settingsWindow  { settingsWindow  = nil }
         if dashboardWindow == nil && settingsWindow == nil {
-            // Drop back to menu-bar-only mode when all windows are closed.
-            NSApp.setActivationPolicy(.accessory)
+            // Only drop back to menu-bar-only mode if the user explicitly chose
+            // to hide the Dock icon. Otherwise keep the Dock icon visible so they
+            // can re-open the dashboard with one click.
+            let showInDock = UserDefaults.standard.bool(forKey: Preferences.Key.showInDock.rawValue)
+            if !showInDock {
+                NSApp.setActivationPolicy(.accessory)
+            }
         }
     }
 

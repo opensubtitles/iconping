@@ -72,6 +72,11 @@
 "ui.simpleMode" = "Jednoduchý režim (iba zelená / červená)";
 "ui.showLatencyText" = "Zobraziť odozvu v lište";
 "ui.flashOnChange" = "Bliknúť pri zmene stavu";
+"ui.showInDock" = "Zobraziť ikonu v Docku";
+"ui.showMenuBar" = "Zobraziť ikonu v lište menu";
+"ui.openDashboardOnLaunch" = "Otvoriť prehľad pri spustení";
+"ui.visibilityHint" = "Ak skryjete oboje, prehľad sa otvorí automaticky, aby ste sa k aplikácii vždy dostali.";
+"settings.visibility" = "Kde zobraziť IconPing";
 
 "language.system" = "Systémový jazyk";
 "language.fallback" = "Ak váš systémový jazyk nie je v zozname, použije sa angličtina.";

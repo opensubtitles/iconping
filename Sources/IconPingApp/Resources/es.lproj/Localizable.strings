@@ -72,6 +72,11 @@
 "ui.simpleMode" = "Modo simple (solo verde / rojo)";
 "ui.showLatencyText" = "Mostrar la latencia en la barra de menús";
 "ui.flashOnChange" = "Parpadear al cambiar de estado";
+"ui.showInDock" = "Mostrar el icono en el Dock";
+"ui.showMenuBar" = "Mostrar el icono en la barra de menús";
+"ui.openDashboardOnLaunch" = "Abrir el panel al iniciar";
+"ui.visibilityHint" = "Si ocultas ambos, el panel se abrirá automáticamente para que no pierdas acceso a la app.";
+"settings.visibility" = "Dónde mostrar IconPing";
 
 "language.system" = "Predeterminado del sistema";
 "language.fallback" = "Si tu idioma del sistema no está en la lista, se usa inglés.";

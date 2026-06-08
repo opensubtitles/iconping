@@ -23,7 +23,7 @@ struct SettingsView: View {
                 .tabItem { Label("settings.about", systemImage: "info.circle") }
                 .tag("about")
         }
-        .frame(width: 580, height: 460)
+        .frame(width: 580, height: 560)
     }
 }
 
@@ -101,6 +101,9 @@ private struct GeneralTab: View {
                 Toggle(isOn: BindingHelper.launchAtLogin()) {
                     Text(LocalizedStringKey("menu.loginItem"))
                 }
+                Toggle(isOn: BindingHelper.userDefaultsBool(.openDashboardOnLaunch)) {
+                    Text(LocalizedStringKey("ui.openDashboardOnLaunch"))
+                }
             }
         }
         .formStyle(.grouped)
@@ -162,6 +165,22 @@ private struct AppearanceTab: View {
 
     var body: some View {
         Form {
+            Section("settings.visibility") {
+                Toggle(isOn: BindingHelper.userDefaultsBoolWithNotification(
+                    .showInDock, notification: .iconPingShowInDockChanged
+                )) {
+                    Text(LocalizedStringKey("ui.showInDock"))
+                }
+                Toggle(isOn: BindingHelper.userDefaultsBoolWithNotification(
+                    .showMenuBar, notification: .iconPingShowMenuBarChanged
+                )) {
+                    Text(LocalizedStringKey("ui.showMenuBar"))
+                }
+                Text("ui.visibilityHint")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("settings.appearance") {
                 Toggle(isOn: BindingHelper.userDefaultsBool(.showLatencyText)) {
                     Text(LocalizedStringKey("ui.showLatencyText"))
@@ -283,6 +302,22 @@ enum BindingHelper {
         Binding<Bool>(
             get: { UserDefaults.standard.bool(forKey: key.rawValue) },
             set: { UserDefaults.standard.set($0, forKey: key.rawValue) }
+        )
+    }
+
+    /// Like `userDefaultsBool` but also posts a Notification when changed, so
+    /// AppDelegate can react live (e.g. flip activation policy, add/remove
+    /// menu-bar status item) without restarting the app.
+    static func userDefaultsBoolWithNotification(
+        _ key: Preferences.Key,
+        notification: Notification.Name
+    ) -> Binding<Bool> {
+        Binding<Bool>(
+            get: { UserDefaults.standard.bool(forKey: key.rawValue) },
+            set: { value in
+                UserDefaults.standard.set(value, forKey: key.rawValue)
+                NotificationCenter.default.post(name: notification, object: nil)
+            }
         )
     }
 

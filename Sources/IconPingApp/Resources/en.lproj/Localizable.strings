@@ -84,6 +84,11 @@
 "ui.simpleMode" = "Simple mode (green / red only)";
 "ui.showLatencyText" = "Show latency text in menu bar";
 "ui.flashOnChange" = "Flash on state change";
+"ui.showInDock" = "Show icon in Dock";
+"ui.showMenuBar" = "Show icon in menu bar";
+"ui.openDashboardOnLaunch" = "Open dashboard on launch";
+"ui.visibilityHint" = "If you hide both, the dashboard opens automatically so you can still reach the app.";
+"settings.visibility" = "Where to show IconPing";
 
 /* Language */
 "language.system" = "System default";

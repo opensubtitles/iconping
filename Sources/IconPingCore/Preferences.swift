@@ -19,9 +19,12 @@ public final class Preferences: @unchecked Sendable {
         case rollingWindow   = "thresholds.rollingWindow"
         case simpleMode      = "ui.simpleMode"
 
-        // appearance
-        case showLatencyText = "ui.showLatencyText"
-        case flashOnChange   = "ui.flashOnChange"
+        // appearance / runtime presence
+        case showLatencyText        = "ui.showLatencyText"
+        case flashOnChange          = "ui.flashOnChange"
+        case showInDock             = "ui.showInDock"
+        case showMenuBar            = "ui.showMenuBar"
+        case openDashboardOnLaunch  = "ui.openDashboardOnLaunch"
 
         // notifications
         case notifyOnDown    = "notifications.onDown"
@@ -56,8 +59,11 @@ public final class Preferences: @unchecked Sendable {
             Key.recoveryDebounce.rawValue:  1,
             Key.rollingWindow.rawValue:     60,
             Key.simpleMode.rawValue:        false,
-            Key.showLatencyText.rawValue:   false,
-            Key.flashOnChange.rawValue:     false,
+            Key.showLatencyText.rawValue:        false,
+            Key.flashOnChange.rawValue:          false,
+            Key.showInDock.rawValue:             true,
+            Key.showMenuBar.rawValue:            true,
+            Key.openDashboardOnLaunch.rawValue:  true,
             Key.notifyOnDown.rawValue:      true,
             Key.notifyOnUp.rawValue:        true,
             Key.notifyThrottle.rawValue:    60,

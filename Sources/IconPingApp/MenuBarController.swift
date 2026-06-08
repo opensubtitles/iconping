@@ -229,4 +229,10 @@ final class MenuBarController: NSObject {
     @objc private func quitApp() {
         NSApp.terminate(nil)
     }
+
+    /// Tear down the status item — used when the user disables "Show menu bar icon".
+    func removeFromStatusBar() {
+        NSStatusBar.system.removeStatusItem(statusItem)
+        observers.removeAll()
+    }
 }
